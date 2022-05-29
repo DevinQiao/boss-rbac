@@ -48,20 +48,8 @@ export const constantRoutes = [
       {
         path: 'dashboard',
         component: () => import('@/views/dashboard/index'),
-        name: 'Dashboard',
-        meta: { title: 'Dashboard', icon: 'dashboard', affix: true }
-      }
-    ]
-  },
-  {
-    path: '/documentation',
-    component: Layout,
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/documentation/index'),
-        name: 'Documentation',
-        meta: { title: 'Documentation', icon: 'documentation', affix: true }
+        name: '系统首页',
+        meta: { title: '系统首页', icon: 'component', affix: true }
       }
     ]
   }
@@ -72,26 +60,18 @@ export const constantRoutes = [
  */
 export const asyncRoutes = [
   {
-    path: '/error',
+    path: '/user',
     component: Layout,
-    redirect: 'noRedirect',
-    name: 'ErrorPages',
-    meta: {
-      title: 'Error Pages',
-      icon: '404'
-    },
+    redirect: '/user/list',
+    alwaysShow: true,
+    name: 'User',
+    meta: { title: '用户管理', icon: 'user', roles: ['admin'] },
     children: [
       {
-        path: '401',
-        component: () => import('@/views/error-page/401'),
-        name: 'Page401',
-        meta: { title: '401', noCache: true }
-      },
-      {
-        path: '404',
-        component: () => import('@/views/error-page/404'),
-        name: 'Page404',
-        meta: { title: '404', noCache: true }
+        path: 'list',
+        component: () => import('@/views/user/index'),
+        name: 'List',
+        meta: { title: '用户管理', icon: 'peoples', roles: ['admin'] }
       }
     ]
   },

@@ -1,6 +1,6 @@
 const Mock = require('mockjs')
 
-const usersForTest = Mock.mock({
+const otherUsers = Mock.mock({
   'items|20': [{
     token: '@id',
     username: '@first',
@@ -16,7 +16,7 @@ const usersForTest = Mock.mock({
 })
 
 const admin = Mock.mock({
-  token: '11111111111',
+  token: 'Admin',
   username: 'admin',
   password: '1234qwer',
   roles: 'admin',
@@ -27,7 +27,7 @@ const admin = Mock.mock({
 })
 
 const editor = Mock.mock({
-  token: '22222222222',
+  token: 'Editor',
   username: 'editor',
   password: '1234qwer',
   roles: 'editor',
@@ -38,7 +38,7 @@ const editor = Mock.mock({
 })
 
 let users = []
-users = users.concat(usersForTest, admin, editor)
+users = users.concat(admin, editor, otherUsers.items)
 
 module.exports = [
   // user login
@@ -105,6 +105,22 @@ module.exports = [
       return {
         code: 20000,
         data: 'success'
+      }
+    }
+  },
+
+  // 获得用户列表
+  {
+    url: '/vue-element-admin/user/list',
+    type: 'get',
+    response: config => {
+      const items = users
+      return {
+        code: 20000,
+        data: {
+          total: items.length,
+          items: items
+        }
       }
     }
   }

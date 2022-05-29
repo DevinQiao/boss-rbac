@@ -1,0 +1,310 @@
+<template>
+  <div class="app-container">
+    <!-- <div style="margin-bottom:10px; float: right;">
+      <el-button type="success" icon="el-icon-circle-plus-outline">新增用户</el-button>
+    </div> -->
+    <div class="operation-container">
+      <el-button
+        type="success"
+        style="float: right"
+        icon="el-icon-circle-plus-outline"
+        @click="popDialog({})"
+      >新增用户
+      </el-button>
+      <el-form :inline="true" :model="searchForm" class="search-form-inline">
+        <el-form-item label="用户名：">
+          <el-input v-model="searchForm.username" />
+        </el-form-item>
+        <el-form-item label="用户角色：">
+          <el-select v-model="searchForm.roles" placeholder="用户角色">
+            <el-option label="admin" value="admin" />
+            <el-option label="editor" value="editor" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" @click="onSubmit">查询</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+    <el-table
+      v-loading="listLoading"
+      :data="ListOfCurrentPage"
+      element-loading-text="Loading"
+      border
+      stripe
+      fit
+      highlight-current-row
+    >
+      <el-table-column type="expand">
+        <template slot-scope="scope">
+          <el-form label-position="left" inline class="demo-table-expand">
+            <el-form-item label="用户ID">
+              <span class="content">{{ scope.row.token }}</span>
+            </el-form-item>
+            <el-form-item label="用户名">
+              <span class="content">{{ scope.row.username }}</span>
+            </el-form-item>
+            <el-form-item label="密码">
+              <span class="content">{{ scope.row.password }}</span>
+            </el-form-item>
+            <el-form-item label="年龄">
+              <span class="content">{{ scope.row.age }}</span>
+            </el-form-item>
+            <el-form-item label="电话">
+              <span class="content">{{ scope.row.phone }}</span>
+            </el-form-item>
+            <el-form-item label="地址">
+              <span class="content">{{ scope.row.address }}</span>
+            </el-form-item>
+          </el-form>
+        </template>
+      </el-table-column>
+      <el-table-column label="序号" align="center">
+        <template slot-scope="scope">
+          {{ scope.$index + 1 }}
+        </template>
+      </el-table-column>
+      <el-table-column label="用户ID" align="center">
+        <template slot-scope="scope">
+          {{ scope.row.token }}
+        </template>
+      </el-table-column>
+      <el-table-column label="用户名" align="center">
+        <template slot-scope="scope">
+          {{ scope.row.username }}
+        </template>
+      </el-table-column>
+      <el-table-column class-name="status-col" label="角色" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.roles | statusFilter">{{ scope.row.roles }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center">
+        <template slot-scope="scope">
+          <el-tooltip class="item" effect="dark" content="修改" placement="bottom">
+            <el-button type="warning" icon="el-icon-edit" circle @click="popDialog(scope.row)" />
+          </el-tooltip>
+          <el-tooltip class="item" effect="dark" content="删除" placement="bottom">
+            <el-button type="danger" icon="el-icon-delete" circle @click="deleteUser(scope.row.token)" />
+          </el-tooltip>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-pagination
+      :current-page="pageNow"
+      :page-sizes="[5, 10, 20, 40]"
+      :page-size="pageSize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="ListForTable.length"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
+
+    <div>
+      <el-dialog
+        :title="isAdd ? '新建用户' : '修改用户'"
+        :visible.sync="dialogVisible"
+        width="30%"
+      >
+        <el-form :model="tempUserInfo" label-width="100px">
+          <el-form-item label="用户名：">
+            <el-input v-model="tempUserInfo.username" />
+          </el-form-item>
+          <el-form-item label="密码：">
+            <el-input v-model="tempUserInfo.password" />
+          </el-form-item>
+          <el-form-item label="用户角色：">
+            <el-select v-model="tempUserInfo.roles">
+              <el-option label="admin" value="admin" />
+              <el-option label="editor" value="editor" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="年龄：">
+            <el-input v-model="tempUserInfo.age" />
+          </el-form-item>
+          <el-form-item label="电话：">
+            <el-input v-model="tempUserInfo.phone" />
+          </el-form-item>
+          <el-form-item label="地址：">
+            <el-input v-model="tempUserInfo.address" />
+          </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="cancel">取 消</el-button>
+          <el-button v-if="isAdd" type="primary" @click="addUser">新 增</el-button>
+          <el-button v-if="!isAdd" type="primary" @click="updateUser">修 改</el-button>
+        </span>
+      </el-dialog>
+    </div>
+  </div>
+</template>
+
+<script>
+import { getUserList } from '@/api/user'
+
+export default {
+  filters: {
+    statusFilter(status) {
+      const statusMap = {
+        admin: 'success',
+        editor: 'primary'
+      }
+      return statusMap[status]
+    }
+  },
+  data() {
+    return {
+      // 从后端拿到的数据
+      userList: null,
+
+      // 加载进度条
+      listLoading: true,
+
+      // 分页属性
+      pageNow: 1,
+      pageSize: 5,
+
+      // 搜索条件
+      searchForm: {
+        username: '',
+        roles: ''
+      },
+      searchOptions: {
+        username: '',
+        roles: ''
+      },
+
+      // 新增和修改窗口相关属性
+      isAdd: true,
+      dialogVisible: false,
+      tempUserInfo: {
+        token: '',
+        username: '',
+        password: '',
+        roles: '',
+        age: 20,
+        phone: '',
+        address: ''
+      }
+    }
+  },
+  computed: {
+    ListForTable() {
+      return this.userList.filter((user) => {
+        return user.username.indexOf(this.searchOptions.username) !== -1
+      }).filter((user) => {
+        return user.roles.indexOf(this.searchOptions.roles) !== -1
+      })
+    },
+    ListOfCurrentPage() {
+      var start = (this.pageNow - 1) * this.pageSize
+      var end = this.pageNow * this.pageSize
+      return this.ListForTable.slice(start, end)
+    }
+  },
+  created() {
+    this.fetchData()
+  },
+  methods: {
+    // 从后端获取数据
+    fetchData() {
+      this.listLoading = true
+      getUserList().then(response => {
+        this.listLength = response.data.total
+        this.userList = response.data.items
+        this.listLoading = false
+      })
+    },
+
+    // 查询按钮
+    onSubmit() {
+      this.searchOptions.username = this.searchForm.username
+      this.searchOptions.roles = this.searchForm.roles
+    },
+
+    // 弹出新建或者修改的对话框
+    popDialog(tempUser) {
+      this.tempUserInfo.token = tempUser.token
+      this.tempUserInfo.username = tempUser.username
+      this.tempUserInfo.password = tempUser.password
+      this.tempUserInfo.roles = tempUser.roles
+      this.tempUserInfo.age = tempUser.age
+      this.tempUserInfo.phone = tempUser.phone
+      this.tempUserInfo.address = tempUser.address
+      var arr = Object.keys(tempUser)
+      if (arr.length === 0) {
+        this.isAdd = true
+      } else {
+        this.isAdd = false
+      }
+      this.dialogVisible = true
+    },
+
+    // 新建用户
+    addUser() {
+      this.tempUserInfo.token = new Date().getTime()
+      const newUserInfo = {
+        token: this.tempUserInfo.token,
+        username: this.tempUserInfo.username,
+        password: this.tempUserInfo.password,
+        roles: this.tempUserInfo.roles,
+        age: this.tempUserInfo.age,
+        phone: this.tempUserInfo.phone,
+        address: this.tempUserInfo.address
+      }
+      this.userList.push(newUserInfo)
+      this.dialogVisible = false
+    },
+
+    // 修改用户
+    updateUser() {
+      for (var index in this.userList) {
+        if (this.userList[index].token === this.tempUserInfo.token) {
+          this.userList[index].username = this.tempUserInfo.username
+          this.userList[index].password = this.tempUserInfo.password
+          this.userList[index].roles = this.tempUserInfo.roles
+          this.userList[index].age = this.tempUserInfo.age
+          this.userList[index].phone = this.tempUserInfo.phone
+          this.userList[index].address = this.tempUserInfo.address
+        }
+      }
+      this.tempUserInfo.token = ''
+      this.tempUserInfo.username = ''
+      this.tempUserInfo.password = ''
+      this.tempUserInfo.roles = ''
+      this.tempUserInfo.age = ''
+      this.tempUserInfo.phone = ''
+      this.tempUserInfo.address = ''
+      this.dialogVisible = false
+    },
+
+    // 删除用户
+    deleteUser(token) {
+      this.$confirm('确认删除这一条记录吗？', '提示', {
+        type: 'danger'
+      }).then(() => {
+        for (var index in this.userList) {
+          if (this.userList[index].token === token) {
+            this.userList.splice(index, 1)
+          }
+        }
+      })
+    },
+
+    // 分页函数
+    handleSizeChange(val) {
+      this.pageSize = val
+    },
+    handleCurrentChange(val) {
+      this.pageNow = val
+    }
+  }
+}
+</script>
+
+<style>
+  .content {
+    margin-right: 20px;
+  }
+</style>

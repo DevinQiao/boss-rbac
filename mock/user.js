@@ -1,27 +1,44 @@
+const Mock = require('mockjs')
 
-const tokens = {
-  admin: {
-    token: 'admin-token'
-  },
-  editor: {
-    token: 'editor-token'
-  }
-}
+const usersForTest = Mock.mock({
+  'items|20': [{
+    token: '@id',
+    username: '@first',
+    password: '1234qwer',
+    'roles|1': ['admin', 'editor'],
+    phone: /^1[34578]\d{9}$/,
+    'age|11-50': 1,
+    address: '@county(true)',
+    avatar() {
+      return Mock.Random.image('100×100', Mock.Random.color(), '#757575', 'png', this.nickName)
+    }
+  }]
+})
 
-const users = {
-  'admin-token': {
-    roles: ['admin'],
-    introduction: 'I am a super administrator',
-    avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-    name: 'Super Admin'
-  },
-  'editor-token': {
-    roles: ['editor'],
-    introduction: 'I am an editor',
-    avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-    name: 'Normal Editor'
-  }
-}
+const admin = Mock.mock({
+  token: '11111111111',
+  username: 'admin',
+  password: '1234qwer',
+  roles: 'admin',
+  phone: /^1[34578]\d{9}$/,
+  'age|11-50': 1,
+  address: '@county(true)',
+  avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
+})
+
+const editor = Mock.mock({
+  token: '22222222222',
+  username: 'editor',
+  password: '1234qwer',
+  roles: 'editor',
+  phone: /^1[34578]\d{9}$/,
+  'age|11-50': 1,
+  address: '@county(true)',
+  avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
+})
+
+let users = []
+users = users.concat(usersForTest, admin, editor)
 
 module.exports = [
   // user login
@@ -30,7 +47,12 @@ module.exports = [
     type: 'post',
     response: config => {
       const { username } = config.body
-      const token = tokens[username]
+      let token
+      users.forEach((u) => {
+        if (u.username === username) {
+          token = u.token
+        }
+      })
 
       // mock error
       if (!token) {
@@ -42,7 +64,7 @@ module.exports = [
 
       return {
         code: 20000,
-        data: token
+        data: { token }
       }
     }
   },
@@ -53,7 +75,12 @@ module.exports = [
     type: 'get',
     response: config => {
       const { token } = config.query
-      const info = users[token]
+      let info
+      users.forEach((u) => {
+        if (u.token === token) {
+          info = u
+        }
+      })
 
       // mock error
       if (!info) {

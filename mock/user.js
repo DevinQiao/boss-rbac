@@ -46,10 +46,10 @@ module.exports = [
     url: '/vue-element-admin/user/login',
     type: 'post',
     response: config => {
-      const { username } = config.body
+      const { username, password } = config.body
       let token
       users.forEach((u) => {
-        if (u.username === username) {
+        if (u.username === username && u.password === password) {
           token = u.token
         }
       })
@@ -58,7 +58,7 @@ module.exports = [
       if (!token) {
         return {
           code: 60204,
-          message: 'Account and password are incorrect.'
+          message: '用户名或者密码不正确'
         }
       }
 
@@ -113,13 +113,58 @@ module.exports = [
   {
     url: '/vue-element-admin/user/list',
     type: 'get',
-    response: config => {
+    response: _ => {
       const items = users
       return {
         code: 20000,
         data: {
           total: items.length,
           items: items
+        }
+      }
+    }
+  },
+
+  // 返回添加用户操作的结果
+  {
+    url: '/vue-element-admin/user/add',
+    type: 'post',
+    response: config => {
+      // 后端添加用户的操作，假设添加是成功的
+      return {
+        code: 20000,
+        data: {
+          result: true
+        }
+      }
+    }
+  },
+
+  // 返回修改用户操作的结果
+  {
+    url: '/vue-element-admin/user/update',
+    type: 'post',
+    response: config => {
+      // 后端修改用户的操作，假设修改是成功的
+      return {
+        code: 20000,
+        data: {
+          result: true
+        }
+      }
+    }
+  },
+
+  // 返回删除用户操作的结果
+  {
+    url: '/vue-element-admin/user/delete',
+    type: 'post',
+    response: config => {
+      // 后端删除用户的操作，假设删除是成功的
+      return {
+        code: 20000,
+        data: {
+          result: true
         }
       }
     }

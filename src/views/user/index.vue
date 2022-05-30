@@ -1,8 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- <div style="margin-bottom:10px; float: right;">
-      <el-button type="success" icon="el-icon-circle-plus-outline">新增用户</el-button>
-    </div> -->
     <div class="operation-container">
       <el-button
         type="success"
@@ -13,10 +10,10 @@
       </el-button>
       <el-form :inline="true" :model="searchForm" class="search-form-inline">
         <el-form-item label="用户名：">
-          <el-input v-model="searchForm.username" />
+          <el-input v-model="searchForm.username" clearable />
         </el-form-item>
         <el-form-item label="用户角色：">
-          <el-select v-model="searchForm.roles" placeholder="用户角色">
+          <el-select v-model="searchForm.roles" placeholder="请选择用户角色" clearable>
             <el-option label="admin" value="admin" />
             <el-option label="editor" value="editor" />
           </el-select>
@@ -103,37 +100,38 @@
 
     <div>
       <el-dialog
+        v-if="dialogVisible"
         :title="isAdd ? '新建用户' : '修改用户'"
         :visible.sync="dialogVisible"
         width="30%"
       >
-        <el-form :model="tempUserInfo" label-width="100px">
-          <el-form-item label="用户名：">
-            <el-input v-model="tempUserInfo.username" />
+        <el-form ref="infoForm" :model="tempUserInfo" label-width="100px" :rules="addAndUpdateRules">
+          <el-form-item label="用户名：" prop="username">
+            <el-input v-model="tempUserInfo.username" clearable />
           </el-form-item>
-          <el-form-item label="密码：">
-            <el-input v-model="tempUserInfo.password" />
+          <el-form-item label="密码：" prop="password">
+            <el-input v-model="tempUserInfo.password" clearable />
           </el-form-item>
-          <el-form-item label="用户角色：">
-            <el-select v-model="tempUserInfo.roles">
+          <el-form-item label="用户角色：" prop="roles">
+            <el-select v-model="tempUserInfo.roles" clearable>
               <el-option label="admin" value="admin" />
               <el-option label="editor" value="editor" />
             </el-select>
           </el-form-item>
-          <el-form-item label="年龄：">
-            <el-input v-model="tempUserInfo.age" />
+          <el-form-item label="年龄：" prop="age">
+            <el-input v-model.number="tempUserInfo.age" clearable />
           </el-form-item>
-          <el-form-item label="电话：">
-            <el-input v-model="tempUserInfo.phone" />
+          <el-form-item label="电话：" prop="phone">
+            <el-input v-model="tempUserInfo.phone" clearable />
           </el-form-item>
-          <el-form-item label="地址：">
-            <el-input v-model="tempUserInfo.address" />
+          <el-form-item label="地址：" prop="address">
+            <el-input v-model="tempUserInfo.address" clearable />
           </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancel">取 消</el-button>
-          <el-button v-if="isAdd" type="primary" @click="addUser">新 增</el-button>
-          <el-button v-if="!isAdd" type="primary" @click="updateUser">修 改</el-button>
+          <el-button v-if="isAdd" type="success" @click="addUser">新 增</el-button>
+          <el-button v-if="!isAdd" type="warning" @click="updateUser">修 改</el-button>
         </span>
       </el-dialog>
     </div>
@@ -141,7 +139,8 @@
 </template>
 
 <script>
-import { getUserList } from '@/api/user'
+import { getUserList, addUser, updateUser, deleteUser } from '@/api/user'
+import { validPhone } from '@/utils/validate'
 
 export default {
   filters: {
@@ -154,9 +153,32 @@ export default {
     }
   },
   data() {
+    const validatePhone = (rule, value, callback) => {
+      if (!validPhone(value)) {
+        callback(new Error('电话号码格式不正确'))
+      } else {
+        callback()
+      }
+    }
+    const validateAge = (rule, value, callback) => {
+      if (!value) {
+        return callback(new Error('年龄不能为空'))
+      }
+      setTimeout(() => {
+        if (!Number.isInteger(value)) {
+          callback(new Error('请输入数字值'))
+        } else {
+          if (value < 0 || value > 120) {
+            callback(new Error('年龄应该在 1 到 120 岁之间'))
+          } else {
+            callback()
+          }
+        }
+      }, 1000)
+    }
     return {
       // 从后端拿到的数据
-      userList: null,
+      userList: [],
 
       // 加载进度条
       listLoading: true,
@@ -186,6 +208,32 @@ export default {
         age: 20,
         phone: '',
         address: ''
+      },
+      addAndUpdateRules: {
+        username: [
+          { required: true, trigger: 'blur', message: '用户名不能为空！' },
+          { pattern: /^[A-Za-z0-9]+$/, trigger: 'blur', message: '用户名只能包含英文字母和数字！' },
+          { min: 3, max: 18, trigger: 'blur', message: '用户名长度在 3 到 18 个字符之间！' }
+        ],
+        password: [
+          { required: true, trigger: 'blur', message: '密码不能为空！' },
+          { pattern: /^\w+$/, trigger: 'blur', message: '密码只能包含英文字母、数字和下划线！' },
+          { min: 6, max: 15, trigger: 'blur', message: '密码长度在 6 到 15 个字符之间！' }
+        ],
+        roles: [
+          { required: true, trigger: 'change', message: '用户角色不能为空！' }
+        ],
+        age: [
+          // { required: true, trigger: 'blur', message: '年龄不能为空！' }
+          { required: true, trigger: 'blur', validator: validateAge }
+        ],
+        phone: [
+          { required: true, trigger: 'blur', message: '电话号码不能为空！' },
+          { trigger: 'blur', validator: validatePhone }
+        ],
+        address: [
+          { required: true, trigger: 'blur', message: '地址不能为空！' }
+        ]
       }
     }
   },
@@ -221,18 +269,23 @@ export default {
     onSubmit() {
       this.searchOptions.username = this.searchForm.username
       this.searchOptions.roles = this.searchForm.roles
+
+      this.$message({
+        message: '查询成功',
+        type: 'success'
+      })
     },
 
     // 弹出新建或者修改的对话框
-    popDialog(tempUser) {
-      this.tempUserInfo.token = tempUser.token
-      this.tempUserInfo.username = tempUser.username
-      this.tempUserInfo.password = tempUser.password
-      this.tempUserInfo.roles = tempUser.roles
-      this.tempUserInfo.age = tempUser.age
-      this.tempUserInfo.phone = tempUser.phone
-      this.tempUserInfo.address = tempUser.address
-      var arr = Object.keys(tempUser)
+    popDialog(tempData) {
+      this.tempUserInfo.token = tempData.token
+      this.tempUserInfo.username = tempData.username
+      this.tempUserInfo.password = tempData.password
+      this.tempUserInfo.roles = tempData.roles
+      this.tempUserInfo.age = tempData.age
+      this.tempUserInfo.phone = tempData.phone
+      this.tempUserInfo.address = tempData.address
+      var arr = Object.keys(tempData)
       if (arr.length === 0) {
         this.isAdd = true
       } else {
@@ -241,34 +294,8 @@ export default {
       this.dialogVisible = true
     },
 
-    // 新建用户
-    addUser() {
-      this.tempUserInfo.token = new Date().getTime()
-      const newUserInfo = {
-        token: this.tempUserInfo.token,
-        username: this.tempUserInfo.username,
-        password: this.tempUserInfo.password,
-        roles: this.tempUserInfo.roles,
-        age: this.tempUserInfo.age,
-        phone: this.tempUserInfo.phone,
-        address: this.tempUserInfo.address
-      }
-      this.userList.push(newUserInfo)
-      this.dialogVisible = false
-    },
-
-    // 修改用户
-    updateUser() {
-      for (var index in this.userList) {
-        if (this.userList[index].token === this.tempUserInfo.token) {
-          this.userList[index].username = this.tempUserInfo.username
-          this.userList[index].password = this.tempUserInfo.password
-          this.userList[index].roles = this.tempUserInfo.roles
-          this.userList[index].age = this.tempUserInfo.age
-          this.userList[index].phone = this.tempUserInfo.phone
-          this.userList[index].address = this.tempUserInfo.address
-        }
-      }
+    // 取消新建或者修改操作
+    cancel() {
       this.tempUserInfo.token = ''
       this.tempUserInfo.username = ''
       this.tempUserInfo.password = ''
@@ -279,16 +306,85 @@ export default {
       this.dialogVisible = false
     },
 
+    // 新建用户
+    addUser() {
+      this.$refs.infoForm.clearValidate()
+      this.tempUserInfo.token = new Date().getTime()
+      const newUserInfo = {
+        token: this.tempUserInfo.token,
+        username: this.tempUserInfo.username,
+        password: this.tempUserInfo.password,
+        roles: this.tempUserInfo.roles,
+        age: this.tempUserInfo.age,
+        phone: this.tempUserInfo.phone,
+        address: this.tempUserInfo.address
+      }
+      addUser(newUserInfo).then(response => {
+        const result = response.data.result
+        if (result) {
+          this.userList.push(newUserInfo)
+          this.dialogVisible = false
+          this.$message({
+            message: '添加用户成功',
+            type: 'success'
+          })
+        }
+      })
+      this.$refs.infoForm.clearValidate()
+    },
+
+    // 修改用户
+    updateUser() {
+      updateUser(this.tempUserInfo).then(response => {
+        const result = response.data.result
+        if (result) {
+          for (var index in this.userList) {
+            if (this.userList[index].token === this.tempUserInfo.token) {
+              this.userList[index].username = this.tempUserInfo.username
+              this.userList[index].password = this.tempUserInfo.password
+              this.userList[index].roles = this.tempUserInfo.roles
+              this.userList[index].age = this.tempUserInfo.age
+              this.userList[index].phone = this.tempUserInfo.phone
+              this.userList[index].address = this.tempUserInfo.address
+            }
+          }
+          this.tempUserInfo.token = ''
+          this.tempUserInfo.username = ''
+          this.tempUserInfo.password = ''
+          this.tempUserInfo.roles = ''
+          this.tempUserInfo.age = ''
+          this.tempUserInfo.phone = ''
+          this.tempUserInfo.address = ''
+          this.dialogVisible = false
+
+          this.$message({
+            message: '修改用户成功',
+            type: 'success'
+          })
+        }
+      })
+    },
+
     // 删除用户
     deleteUser(token) {
       this.$confirm('确认删除这一条记录吗？', '提示', {
         type: 'danger'
       }).then(() => {
-        for (var index in this.userList) {
-          if (this.userList[index].token === token) {
-            this.userList.splice(index, 1)
+        deleteUser(token).then(response => {
+          const result = response.data.result
+          if (result) {
+            for (var index in this.userList) {
+              if (this.userList[index].token === token) {
+                this.userList.splice(index, 1)
+              }
+            }
+
+            this.$message({
+              message: '删除用户成功',
+              type: 'success'
+            })
           }
-        }
+        })
       })
     },
 

@@ -15,8 +15,22 @@ export function isExternal(path) {
  * @returns {Boolean}
  */
 export function validUsername(str) {
-  const valid_map = ['admin', 'editor']
-  return valid_map.indexOf(str.trim()) >= 0
+  const reg = /^\w+$/
+  return reg.test(str)
+}
+
+/**
+ * 验证电话号码
+ * @param {*} phone
+ * @returns
+ */
+export function validPhone(phone) {
+  const reg = /^[1][3, 4, 5, 6, 7, 8][0-9]{9}$/
+  if (reg.test(phone)) {
+    return true
+  } else {
+    return false
+  }
 }
 
 /**

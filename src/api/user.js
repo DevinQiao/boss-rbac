@@ -29,3 +29,27 @@ export function getUserList() {
     method: 'get'
   })
 }
+
+export function addUser(data) {
+  return request({
+    url: '/vue-element-admin/user/add',
+    method: 'post',
+    data
+  })
+}
+
+export function updateUser(data) {
+  return request({
+    url: '/vue-element-admin/user/update',
+    method: 'post',
+    data
+  })
+}
+
+export function deleteUser(token) {
+  return request({
+    url: '/vue-element-admin/user/delete',
+    method: 'post',
+    token
+  })
+}

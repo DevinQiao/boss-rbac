@@ -50,6 +50,7 @@
     </el-table>
 
     <el-pagination
+      v-if="ListForTable.length/pageSize > 1"
       :current-page="pageNow"
       :page-sizes="[5, 10, 20, 40]"
       :page-size="pageSize"
@@ -124,7 +125,7 @@ export default {
       dialogVisible: false,
       tempUserRoleInfo: {
         username: '',
-        roles: ''
+        roles: []
       },
       infoFormRules: {
         username: [
@@ -171,7 +172,7 @@ export default {
         this.listLoading = false
       })
       getRoles().then(response => {
-        const roles = response.data
+        const roles = response.data.roles
         roles.forEach(role => {
           if (role.name !== 'admin') { this.roleList.push(role.name) }
         })
@@ -204,20 +205,24 @@ export default {
 
     // 修改用户角色
     updateUserRole() {
-      updateUserRole(this.tempUserRoleInfo).then(response => {
-        const result = response.data.result
-        if (result) {
-          for (var index in this.userRoleList) {
-            if (this.userRoleList[index].username === this.tempUserRoleInfo.username) {
-              this.userRoleList[index].roles = this.tempUserRoleInfo.roles
-            }
-          }
-          this.tempUserRoleInfo.roles = []
-          this.dialogVisible = false
+      this.$refs.infoForm.validate(valid => {
+        if (valid) {
+          updateUserRole(this.tempUserRoleInfo).then(response => {
+            const result = response.data.result
+            if (result) {
+              for (var index in this.userRoleList) {
+                if (this.userRoleList[index].username === this.tempUserRoleInfo.username) {
+                  this.userRoleList[index].roles = this.tempUserRoleInfo.roles
+                }
+              }
+              this.tempUserRoleInfo.roles = []
+              this.dialogVisible = false
 
-          this.$message({
-            message: '修改用户角色成功',
-            type: 'success'
+              this.$message({
+                message: '修改用户角色成功',
+                type: 'success'
+              })
+            }
           })
         }
       })

@@ -86,6 +86,7 @@
     </el-table>
 
     <el-pagination
+      v-if="ListForTable.length / pageSize > 1"
       :current-page="pageNow"
       :page-sizes="[5, 10, 20, 40]"
       :page-size="pageSize"
@@ -329,34 +330,36 @@ export default {
     // 修改用户
     updateUser() {
       this.$refs.infoForm.validate(valid => {
-        updateUser(this.tempUserInfo).then(response => {
-          const result = response.data.result
-          if (result) {
-            for (var index in this.userList) {
-              if (this.userList[index].id === this.tempUserInfo.id) {
-                this.userList[index].username = this.tempUserInfo.username
-                this.userList[index].password = this.tempUserInfo.password
-                this.userList[index].status = this.tempUserInfo.status
-                this.userList[index].age = this.tempUserInfo.age
-                this.userList[index].phone = this.tempUserInfo.phone
-                this.userList[index].address = this.tempUserInfo.address
+        if (valid) {
+          updateUser(this.tempUserInfo).then(response => {
+            const result = response.data.result
+            if (result) {
+              for (var index in this.userList) {
+                if (this.userList[index].id === this.tempUserInfo.id) {
+                  this.userList[index].username = this.tempUserInfo.username
+                  this.userList[index].password = this.tempUserInfo.password
+                  this.userList[index].status = this.tempUserInfo.status
+                  this.userList[index].age = this.tempUserInfo.age
+                  this.userList[index].phone = this.tempUserInfo.phone
+                  this.userList[index].address = this.tempUserInfo.address
+                }
               }
-            }
-            this.tempUserInfo.id = ''
-            this.tempUserInfo.username = ''
-            this.tempUserInfo.password = ''
-            this.tempUserInfo.status = ''
-            this.tempUserInfo.age = ''
-            this.tempUserInfo.phone = ''
-            this.tempUserInfo.address = ''
-            this.dialogVisible = false
+              this.tempUserInfo.id = ''
+              this.tempUserInfo.username = ''
+              this.tempUserInfo.password = ''
+              this.tempUserInfo.status = ''
+              this.tempUserInfo.age = ''
+              this.tempUserInfo.phone = ''
+              this.tempUserInfo.address = ''
+              this.dialogVisible = false
 
-            this.$message({
-              message: '修改用户成功',
-              type: 'success'
-            })
-          }
-        })
+              this.$message({
+                message: '修改用户成功',
+                type: 'success'
+              })
+            }
+          })
+        }
       })
     },
 

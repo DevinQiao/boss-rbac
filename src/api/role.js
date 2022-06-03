@@ -36,3 +36,19 @@ export function deleteRole(id) {
     method: 'delete'
   })
 }
+
+export function assignUser(key) {
+  return request({
+    url: '/role/assign-user',
+    method: 'post',
+    key
+  })
+}
+
+export function assignPermission(key) {
+  return request({
+    url: '/role/assign-permission',
+    method: 'post',
+    key
+  })
+}

@@ -3,24 +3,36 @@ const { deepClone } = require('../utils')
 const { asyncRoutes, constantRoutes } = require('./routes.js')
 
 const routes = deepClone([...constantRoutes, ...asyncRoutes])
+// const users = ['tom', 'amy']
+// Mock.Random.extend({
+//   constellations: users,
+//   'newUsers': function() {
+//     return this.pick(this.constellations, 1, this.constellations.length)
+//   }
+// })
 
 const roles = [
   {
     key: 'admin',
     name: 'admin',
-    description: 'Super Administrator. Have access to view all pages.',
+    description: '超级管理员，可以访问所有的界面。',
+    status: '启用',
     routes: routes
+    // users: '@newUsers'
   },
   {
     key: 'editor',
     name: 'editor',
-    description: 'Normal Editor. Can see all pages except permission page',
-    routes: routes.filter(i => i.path !== '/permission')// just a mock
+    description: '普通管理员，可以看到自己拥有的所有界面。',
+    status: '启用',
+    routes: routes.filter(i => i.path !== '/permission') // just a mock
+    // users: '@newUsers'
   },
   {
     key: 'visitor',
     name: 'visitor',
-    description: 'Just a visitor. Can only see the home page and the document page',
+    description: '普通访问者，只能查看系统首页。',
+    status: '启用',
     routes: [{
       path: '',
       redirect: 'dashboard',
@@ -32,6 +44,7 @@ const roles = [
         }
       ]
     }]
+    // users: '@newUsers'
   }
 ]
 
@@ -55,7 +68,11 @@ module.exports = [
     response: _ => {
       return {
         code: 20000,
-        data: roles
+        data: {
+          total: roles.length,
+          roles: roles
+          // users: users
+        }
       }
     }
   },
@@ -67,7 +84,8 @@ module.exports = [
     response: {
       code: 20000,
       data: {
-        key: Mock.mock('@integer(300, 5000)')
+        key: Mock.mock('@integer(300, 5000)'),
+        result: true
       }
     }
   },
@@ -79,7 +97,7 @@ module.exports = [
     response: {
       code: 20000,
       data: {
-        status: 'success'
+        result: true
       }
     }
   },
@@ -91,7 +109,31 @@ module.exports = [
     response: {
       code: 20000,
       data: {
-        status: 'success'
+        result: true
+      }
+    }
+  },
+
+  // 分配用户
+  {
+    url: '/role/assign-user',
+    type: 'post',
+    response: {
+      code: 20000,
+      data: {
+        result: true
+      }
+    }
+  },
+
+  // 分配权限
+  {
+    url: '/role/assign-permission',
+    type: 'post',
+    response: {
+      code: 20000,
+      data: {
+        result: true
       }
     }
   }

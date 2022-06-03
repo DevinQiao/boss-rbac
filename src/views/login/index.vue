@@ -21,7 +21,7 @@
         />
       </el-form-item>
 
-      <el-tooltip v-model="capsTooltip" content="Caps lock is On" placement="right" manual>
+      <el-tooltip v-model="capsTooltip" content="大写已打开" placement="right" manual>
         <el-form-item prop="password">
           <span class="svg-container">
             <svg-icon icon-class="password" />
@@ -55,21 +55,22 @@
 export default {
   name: 'Login',
   data() {
-    const validatePassword = (rule, value, callback) => {
-      if (value.length < 6) {
-        callback(new Error('密码的长度不少于6位！'))
-      } else {
-        callback()
-      }
-    }
     return {
       loginForm: {
         username: '',
         password: ''
       },
       loginRules: {
-        username: [{ required: true, trigger: 'blur', message: '用户名不能为空' }],
-        password: [{ required: true, trigger: 'blur', validator: validatePassword }]
+        username: [
+          { required: true, trigger: 'blur', message: '用户名不能为空！' },
+          { pattern: /^[A-Za-z0-9]+$/, trigger: 'blur', message: '用户名只能包含英文字母和数字！' },
+          { min: 3, max: 18, trigger: 'blur', message: '用户名长度在 3 到 18 个字符之间！' }
+        ],
+        password: [
+          { required: true, trigger: 'blur', message: '密码不能为空！' },
+          { pattern: /^\w+$/, trigger: 'blur', message: '密码只能包含英文字母、数字和下划线！' },
+          { min: 6, max: 15, trigger: 'blur', message: '密码长度在 6 到 15 个字符之间！' }
+        ]
       },
       passwordType: 'password',
       capsTooltip: false,
@@ -126,7 +127,7 @@ export default {
               this.loading = false
             })
         } else {
-          console.log('error submit!!')
+          console.log('提交错误!')
           return false
         }
       })

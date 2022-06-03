@@ -53,3 +53,11 @@ export function deleteUser(token) {
     token
   })
 }
+
+export function updateUserRole(data) {
+  return request({
+    url: '/user/updateRole',
+    method: 'post',
+    data
+  })
+}

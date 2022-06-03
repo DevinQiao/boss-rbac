@@ -1,36 +1,48 @@
+const sha256 = require('js-sha256')
 const Mock = require('mockjs')
+
+const rolesArray = ['admin', 'editor']
+Mock.Random.extend({
+  constellations: rolesArray,
+  'newRoles': function() {
+    return this.pick(this.constellations, 1, this.constellations.length)
+  }
+})
 
 const otherUsers = Mock.mock({
   'items|20': [{
-    token: '@id',
+    id: '@id',
     username: '@first',
     password: '1234qwer',
-    'roles|1': ['admin', 'editor'],
+    roles: '@newRoles',
+    'status|1': ['启用', '禁用'],
     phone: /^1[34578]\d{9}$/,
-    'age|11-50': 1,
+    'age|1-120': 1,
     address: '@county(true)',
     avatar() {
-      return Mock.Random.image('100×100', Mock.Random.color(), '#757575', 'png', this.nickName)
+      return Mock.Random.image('100×100', Mock.Random.color(), '#757575', 'png', this.username)
     }
   }]
 })
 
 const admin = Mock.mock({
-  token: 'Admin',
+  id: 'Admin',
   username: 'admin',
   password: '1234qwer',
-  roles: 'admin',
+  roles: ['admin'],
+  status: '启用',
   phone: /^1[34578]\d{9}$/,
-  'age|11-50': 1,
+  'age|1-120': 1,
   address: '@county(true)',
   avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
 })
 
 const editor = Mock.mock({
-  token: 'Editor',
+  id: 'Editor',
   username: 'editor',
   password: '1234qwer',
-  roles: 'editor',
+  roles: ['editor'],
+  status: '启用',
   phone: /^1[34578]\d{9}$/,
   'age|11-50': 1,
   address: '@county(true)',
@@ -47,10 +59,11 @@ module.exports = [
     type: 'post',
     response: config => {
       const { username, password } = config.body
+      const tempInfo = { username, password }
       let token
       users.forEach((u) => {
         if (u.username === username && u.password === password) {
-          token = u.token
+          token = sha256(JSON.stringify(tempInfo))
         }
       })
 
@@ -77,7 +90,9 @@ module.exports = [
       const { token } = config.query
       let info
       users.forEach((u) => {
-        if (u.token === token) {
+        const { username, password } = u
+        const temp = { username, password }
+        if (sha256(JSON.stringify(temp)) === token) {
           info = u
         }
       })
@@ -161,6 +176,21 @@ module.exports = [
     type: 'post',
     response: config => {
       // 后端删除用户的操作，假设删除是成功的
+      return {
+        code: 20000,
+        data: {
+          result: true
+        }
+      }
+    }
+  },
+
+  // 返回修改用户角色操作的结果
+  {
+    url: '/user/updateRole',
+    type: 'post',
+    response: config => {
+      // 后端修改用户的操作，假设修改是成功的
       return {
         code: 20000,
         data: {

@@ -6,7 +6,7 @@ function resolve(dir) {
   return path.join(__dirname, dir)
 }
 
-const name = defaultSettings.title || 'vue Element Admin' // page title
+const name = defaultSettings.title || 'boss RBAC' // page title
 
 const port = process.env.port || process.env.npm_config_port || 9000 // dev port
 

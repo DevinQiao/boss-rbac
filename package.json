@@ -1,6 +1,6 @@
 {
-  "name": "vue-element-admin",
-  "version": "4.4.0",
+  "name": "boss-rbac",
+  "version": "1.0.0",
   "description": "A magical vue admin. An out-of-box UI solution for enterprise applications. Newest development stack of vue. Lots of awesome features",
   "author": "Pan <panfree23@gmail.com>",
   "scripts": {
@@ -26,6 +26,7 @@
     "file-saver": "2.0.1",
     "fuse.js": "3.4.4",
     "js-cookie": "2.2.0",
+    "js-sha256": "^0.9.0",
     "jsonlint": "1.6.3",
     "jszip": "3.2.1",
     "normalize.css": "7.0.0",

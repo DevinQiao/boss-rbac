@@ -52,6 +52,21 @@ export const constantRoutes = [
         meta: { title: '系统首页', icon: 'component', affix: true }
       }
     ]
+  },
+  {
+    path: '/personal-center',
+    component: Layout,
+    redirect: '/personal-center/show',
+    name: 'PersonalCenter',
+    meta: { title: '个人中心', icon: 'user' },
+    children: [
+      {
+        path: 'show',
+        component: () => import('@/views/personal-center/index'),
+        name: 'Show',
+        meta: { title: '个人信息', icon: 'user' }
+      }
+    ]
   }
 ]
 
@@ -63,7 +78,6 @@ export const asyncRoutes = [
     path: '/user',
     component: Layout,
     redirect: '/user/list',
-    alwaysShow: true,
     name: 'User',
     meta: { title: '用户管理', icon: 'user', roles: ['admin'] },
     children: [
@@ -71,7 +85,45 @@ export const asyncRoutes = [
         path: 'list',
         component: () => import('@/views/user/index'),
         name: 'List',
-        meta: { title: '用户管理', icon: 'peoples', roles: ['admin'] }
+        meta: { title: '用户信息管理', icon: 'peoples' }
+      },
+      {
+        path: 'user-role',
+        component: () => import('@/views/user/user-role'),
+        name: 'UserRoleList',
+        meta: { title: '用户角色分配', icon: 'peoples' }
+      }
+    ]
+  },
+
+  {
+    path: '/role',
+    component: Layout,
+    redirect: '/role/list',
+    name: 'Role',
+    meta: { title: '角色管理', icon: 'user', roles: ['admin'] },
+    children: [
+      {
+        path: 'list',
+        component: () => import('@/views/role/index'),
+        name: 'List',
+        meta: { title: '角色管理', icon: 'user' }
+      }
+    ]
+  },
+
+  {
+    path: '/resource',
+    component: Layout,
+    redirect: '/resource/list',
+    name: 'Resource',
+    meta: { title: '资源管理', icon: 'user', roles: ['admin'] },
+    children: [
+      {
+        path: 'list',
+        component: () => import('@/views/resource/index'),
+        name: 'List',
+        meta: { title: '资源管理', icon: 'user' }
       }
     ]
   },

@@ -113,17 +113,17 @@ export const asyncRoutes = [
   },
 
   {
-    path: '/resource',
+    path: '/permission',
     component: Layout,
-    redirect: '/resource/list',
-    name: 'Resource',
-    meta: { title: '资源管理', icon: 'user', roles: ['admin'] },
+    redirect: '/permission/list',
+    name: 'Permission',
+    meta: { title: '权限管理', icon: 'user', roles: ['admin'] },
     children: [
       {
         path: 'list',
-        component: () => import('@/views/resource/index'),
-        name: 'ResourceList',
-        meta: { title: '资源管理', icon: 'user' }
+        component: () => import('@/views/permission/index'),
+        name: 'PermissionList',
+        meta: { title: '权限管理', icon: 'user' }
       }
     ]
   },

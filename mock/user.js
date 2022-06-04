@@ -17,11 +17,9 @@ const otherUsers = Mock.mock({
     roles: '@newRoles',
     'status|1': ['启用', '禁用'],
     phone: /^1[34578]\d{9}$/,
-    'age|1-120': 1,
+    'age|20-50': 1,
     address: '@county(true)',
-    avatar() {
-      return Mock.Random.image('100×100', Mock.Random.color(), '#757575', 'png', this.username)
-    }
+    'avatar|1': ['a-ziyuan80', 'a-ziyuan85', 'a-ziyuan87', 'a-ziyuan88', 'a-ziyuan89', 'a-ziyuan90', 'a-ziyuan92', 'a-ziyuan95', 'a-ziyuan97', 'a-ziyuan98', 'a-ziyuan100', 'a-ziyuan101', 'a-ziyuan102', 'a-ziyuan103', 'a-ziyuan104', 'a-ziyuan105', 'a-ziyuan106', 'a-ziyuan107', 'a-ziyuan108', 'a-ziyuan112']
   }]
 })
 
@@ -32,9 +30,9 @@ const admin = Mock.mock({
   roles: ['admin'],
   status: '启用',
   phone: /^1[34578]\d{9}$/,
-  'age|1-120': 1,
+  'age|20-50': 1,
   address: '@county(true)',
-  avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
+  avatar: 'a-ziyuan80'
 })
 
 const editor = Mock.mock({
@@ -44,9 +42,9 @@ const editor = Mock.mock({
   roles: ['editor'],
   status: '启用',
   phone: /^1[34578]\d{9}$/,
-  'age|11-50': 1,
+  'age|20-50': 1,
   address: '@county(true)',
-  avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
+  avatar: 'a-ziyuan89'
 })
 
 let users = []
@@ -101,7 +99,7 @@ module.exports = [
       if (!info) {
         return {
           code: 50008,
-          message: 'Login failed, unable to get user details.'
+          message: '登录失败，无法获得用户信息。'
         }
       }
 

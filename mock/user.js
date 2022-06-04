@@ -3,9 +3,9 @@ const Mock = require('mockjs')
 
 const rolesArray = ['admin', 'editor']
 Mock.Random.extend({
-  constellations: rolesArray,
+  rowsForUser: rolesArray,
   'newRoles': function() {
-    return this.pick(this.constellations, 1, this.constellations.length)
+    return this.pick(this.rowsForUser, 1, this.rowsForUser.length)
   }
 })
 

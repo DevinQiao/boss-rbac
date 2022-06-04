@@ -35,6 +35,9 @@
             <el-form-item label="角色描述">
               <span class="content">{{ scope.row.description }}</span>
             </el-form-item>
+            <el-form-item label="当前已分配用户：">
+              <span v-for="(user,index) in scope.row.users" :key="index" class="content">{{ user }}</span>
+            </el-form-item>
           </el-form>
         </template>
       </el-table-column>
@@ -65,10 +68,10 @@
             <el-button type="danger" @click="deleteRole(scope.row.key)">删除</el-button>
           </el-tooltip>
           <el-tooltip class="item" effect="dark" content="为角色分配用户" placement="bottom">
-            <el-button type="primary" @click="popDialog(scope.row)">分配用户</el-button>
+            <el-button type="primary" @click="beforeAssignUsers(scope.row)">分配用户</el-button>
           </el-tooltip>
           <el-tooltip class="item" effect="dark" content="为角色分配权限" placement="top">
-            <el-button type="primary" @click="popDialog(scope.row)">分配权限</el-button>
+            <el-button type="primary" @click="beforeAssignPermissions(scope.row)">分配权限</el-button>
           </el-tooltip>
         </template>
       </el-table-column>
@@ -93,28 +96,41 @@
         width="30%"
       >
         <el-form ref="infoForm" :model="tempRoleInfo" label-width="100px" :rules="addAndUpdateRules">
-          <el-form-item label="角色名称：" prop="name" :disabled="!treeVisible">
-            <el-input v-model="tempRoleInfo.name" clearable />
+          <el-form-item label="角色名称：" prop="name">
+            <el-input v-model="tempRoleInfo.name" clearable :disabled="treeVisible" />
           </el-form-item>
-          <el-form-item label="角色状态：" prop="status" :disabled="!treeVisible">
-            <el-select v-model="tempRoleInfo.status" clearable>
+          <el-form-item v-show="!treeVisible" label="角色状态：" prop="status">
+            <el-select v-model="tempRoleInfo.status" clearable :disabled="treeVisible">
               <el-option label="启用" value="启用" />
               <el-option label="禁用" value="禁用" />
             </el-select>
           </el-form-item>
-          <el-form-item label="角色描述：" prop="description" :disabled="!treeVisible">
-            <el-input v-model="tempRoleInfo.description" type="textarea" />
+          <el-form-item v-show="!treeVisible" label="角色描述：" prop="description">
+            <el-input v-model="tempRoleInfo.description" type="textarea" :disabled="treeVisible" />
           </el-form-item>
-          <el-form-item v-show="treeVisible" label="可分配用户：">
+          <el-form-item v-show="treeVisible && isAssignUser" label="可分配用户：">
             <el-select v-model="tempRoleInfo.users" placeholder="请选择用户" clearable multiple>
               <el-option v-for="(user,index) in userList" :key="index" :label="user" :value="user" />
             </el-select>
           </el-form-item>
+          <el-form-item v-show="treeVisible && !isAssignUser" label="可分配权限：">
+            <el-tree
+              ref="tree"
+              :check-strictly="checkStrictly"
+              :data="routesData"
+              :props="defaultProps"
+              show-checkbox
+              node-key="path"
+              class="permission-tree"
+            />
+          </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelForDialog">取 消</el-button>
-          <el-button v-if="isAdd" type="success" @click="addRole">新 增</el-button>
-          <el-button v-if="!isAdd" type="warning" @click="updateRole">修 改</el-button>
+          <el-button v-if="!treeVisible && isAdd" type="success" @click="addRole">新 增</el-button>
+          <el-button v-if="!treeVisible && !isAdd" type="warning" @click="updateRole">修 改</el-button>
+          <el-button v-if="treeVisible && isAssignUser" type="primary" @click="assignUsers">保 存</el-button>
+          <el-button v-if="treeVisible && !isAssignUser" type="primary" @click="assignPermissions">保 存</el-button>
         </span>
       </el-dialog>
     </div>
@@ -122,7 +138,9 @@
 </template>
 
 <script>
-import { getRoles, addRole, updateRole, deleteRole, assignUser } from '@/api/role'
+import path from 'path'
+import { deepClone } from '@/utils'
+import { getRoles, addRole, updateRole, deleteRole, assignUsers, getRoutes, assignPermissions } from '@/api/role'
 
 export default {
   filters: {
@@ -162,7 +180,8 @@ export default {
         name: '',
         status: '',
         description: '',
-        users: []
+        users: [],
+        routes: []
       },
       addAndUpdateRules: {
         name: [
@@ -179,7 +198,13 @@ export default {
       // 分配用户或者权限相关属性
       isAssignUser: true,
       treeVisible: false,
-      userList: []
+      userList: [],
+      routes: [],
+      checkStrictly: false,
+      defaultProps: {
+        children: 'children',
+        label: 'title'
+      }
     }
   },
   computed: {
@@ -207,6 +232,9 @@ export default {
           return '修改角色'
         }
       }
+    },
+    routesData() {
+      return this.routes
     }
   },
   created() {
@@ -216,6 +244,10 @@ export default {
     // 从后端获取数据
     fetchData() {
       this.listLoading = true
+      getRoutes().then(response => {
+        this.serviceRoutes = response.data
+        this.routes = this.generateRoutes(response.data)
+      })
       getRoles().then(response => {
         this.listLength = response.data.total
         this.roleList = response.data.roles
@@ -240,6 +272,8 @@ export default {
       this.tempRoleInfo.name = tempData.name
       this.tempRoleInfo.status = tempData.status
       this.tempRoleInfo.description = tempData.description
+      this.tempRoleInfo.users = tempData.users
+      this.tempRoleInfo.routes = tempData.routes
       var arr = Object.keys(tempData)
       if (arr.length === 1) {
         this.isAdd = true
@@ -255,6 +289,7 @@ export default {
       this.tempRoleInfo.status = ''
       this.tempRoleInfo.description = ''
       this.dialogVisible = false
+      this.treeVisible = false
     },
 
     // 新建角色
@@ -342,17 +377,152 @@ export default {
 
     // 为该角色分配用户
     // 用户列表是mock随机生成的，所以在跟后端接入的时候，要再次进行调整
-    assignUser(tempData) {
+    beforeAssignUsers(tempData) {
       this.treeVisible = true
       this.isAssignUser = true
       this.popDialog(tempData)
-      assignUser(tempData.key).then(response => {
-        const { result } = response.data.result
-        if (result) {
-          console.log(1)
+    },
+
+    assignUsers() {
+      this.$refs.infoForm.validate(valid => {
+        if (valid) {
+          assignUsers(this.tempRoleInfo).then(response => {
+            const result = response.data.result
+            if (result) {
+              for (var index in this.roleList) {
+                if (this.roleList[index].key === this.tempRoleInfo.key) {
+                  this.roleList[index].users = this.tempRoleInfo.users
+                }
+              }
+              this.tempRoleInfo.users = []
+            }
+            this.$message({
+              message: '分配角色成功',
+              type: 'success'
+            })
+            this.dialogVisible = false
+            this.treeVisible = false
+          })
         }
       })
+    },
+
+    beforeAssignPermissions(tempData) {
+      this.treeVisible = true
+      this.isAssignUser = false
+      this.checkStrictly = true
+      this.popDialog(tempData)
+      this.$nextTick(() => {
+        const routes = this.generateRoutes(this.tempRoleInfo.routes)
+        this.$refs.tree.setCheckedNodes(this.generateArr(routes))
+        // set checked state of a node not affects its father and child nodes
+        this.checkStrictly = false
+      })
+      this.popDialog(tempData)
+    },
+
+    generateRoutes(routes, basePath = '/') {
+      const res = []
+
+      for (let route of routes) {
+        // skip some route
+        if (route.hidden) { continue }
+
+        const onlyOneShowingChild = this.onlyOneShowingChild(route.children, route)
+
+        if (route.children && onlyOneShowingChild && !route.alwaysShow) {
+          route = onlyOneShowingChild
+        }
+
+        const data = {
+          path: path.resolve(basePath, route.path),
+          title: route.meta && route.meta.title
+
+        }
+
+        // recursive child routes
+        if (route.children) {
+          data.children = this.generateRoutes(route.children, data.path)
+        }
+        res.push(data)
+      }
+      return res
+    },
+
+    generateArr(routes) {
+      let data = []
+      routes.forEach(route => {
+        data.push(route)
+        if (route.children) {
+          const temp = this.generateArr(route.children)
+          if (temp.length > 0) {
+            data = [...data, ...temp]
+          }
+        }
+      })
+      return data
+    },
+
+    onlyOneShowingChild(children = [], parent) {
+      let onlyOneChild = null
+      const showingChildren = children.filter(item => !item.hidden)
+
+      // When there is only one child route, the child route is displayed by default
+      if (showingChildren.length === 1) {
+        onlyOneChild = showingChildren[0]
+        onlyOneChild.path = path.resolve(parent.path, onlyOneChild.path)
+        return onlyOneChild
+      }
+
+      // Show parent if there are no child route to display
+      if (showingChildren.length === 0) {
+        onlyOneChild = { ... parent, path: '', noShowingChildren: true }
+        return onlyOneChild
+      }
+
+      return false
+    },
+
+    generateTree(routes, basePath = '/', checkedKeys) {
+      const res = []
+
+      for (const route of routes) {
+        const routePath = path.resolve(basePath, route.path)
+
+        // recursive child routes
+        if (route.children) {
+          route.children = this.generateTree(route.children, routePath, checkedKeys)
+        }
+
+        if (checkedKeys.includes(routePath) || (route.children && route.children.length >= 1)) {
+          res.push(route)
+        }
+      }
+      return res
+    },
+
+    async assignPermissions() {
+      const checkedKeys = this.$refs.tree.getCheckedKeys()
+      this.tempRoleInfo.routes = this.generateTree(deepClone(this.serviceRoutes), '/', checkedKeys)
+
+      const response = await assignPermissions(this.tempRoleInfo)
+      const result = response.data.result
+      if (result) {
+        for (let index = 0; index < this.roleList.length; index++) {
+          if (this.roleList[index].key === this.tempRoleInfo.key) {
+            this.roleList.splice(index, 1, Object.assign({}, this.tempRoleInfo))
+            break
+          }
+        }
+      }
+      this.treeVisible = false
+      this.dialogVisible = false
+      this.$message({
+        message: '分配权限成功',
+        type: 'success'
+      })
     }
+
   }
 }
 </script>
@@ -360,5 +530,8 @@ export default {
 <style>
   .content {
     margin-right: 20px;
+  }
+  .permission-tree {
+    margin-bottom: 30px;
   }
 </style>

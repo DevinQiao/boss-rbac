@@ -37,17 +37,17 @@ export function deleteRole(id) {
   })
 }
 
-export function assignUser(key) {
+export function assignUsers(key) {
   return request({
-    url: '/role/assign-user',
+    url: '/role/assign-users',
     method: 'post',
     key
   })
 }
 
-export function assignPermission(key) {
+export function assignPermissions(key) {
   return request({
-    url: '/role/assign-permission',
+    url: '/role/assign-permissions',
     method: 'post',
     key
   })

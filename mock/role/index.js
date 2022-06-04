@@ -3,13 +3,16 @@ const { deepClone } = require('../utils')
 const { asyncRoutes, constantRoutes } = require('./routes.js')
 
 const routes = deepClone([...constantRoutes, ...asyncRoutes])
-// const users = ['tom', 'amy']
-// Mock.Random.extend({
-//   constellations: users,
-//   'newUsers': function() {
-//     return this.pick(this.constellations, 1, this.constellations.length)
-//   }
-// })
+const users = []
+for (let i = 0; i < 8; i++) {
+  users.push(Mock.Random.first())
+}
+Mock.Random.extend({
+  usersForRole: users,
+  'newUsers': function() {
+    return this.pick(this.usersForRole, 1, 5)
+  }
+})
 
 const roles = [
   {
@@ -17,16 +20,16 @@ const roles = [
     name: 'admin',
     description: '超级管理员，可以访问所有的界面。',
     status: '启用',
-    routes: routes
-    // users: '@newUsers'
+    routes: routes,
+    users: '@newUsers'
   },
   {
     key: 'editor',
     name: 'editor',
     description: '普通管理员，可以看到自己拥有的所有界面。',
     status: '启用',
-    routes: routes.filter(i => i.path !== '/permission') // just a mock
-    // users: '@newUsers'
+    routes: routes.filter(i => i.path !== '/permission'), // just a mock
+    users: '@newUsers'
   },
   {
     key: 'visitor',
@@ -43,8 +46,8 @@ const roles = [
           meta: { title: 'dashboard', icon: 'dashboard' }
         }
       ]
-    }]
-    // users: '@newUsers'
+    }],
+    users: '@newUsers'
   }
 ]
 
@@ -70,8 +73,8 @@ module.exports = [
         code: 20000,
         data: {
           total: roles.length,
-          roles: roles
-          // users: users
+          roles: roles,
+          users: users
         }
       }
     }
@@ -116,7 +119,7 @@ module.exports = [
 
   // 分配用户
   {
-    url: '/role/assign-user',
+    url: '/role/assign-users',
     type: 'post',
     response: {
       code: 20000,
@@ -128,7 +131,7 @@ module.exports = [
 
   // 分配权限
   {
-    url: '/role/assign-permission',
+    url: '/role/assign-permissions',
     type: 'post',
     response: {
       code: 20000,

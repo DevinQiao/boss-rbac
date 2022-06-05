@@ -4,11 +4,13 @@ const { param2Obj } = require('./utils')
 const user = require('./user')
 const role = require('./role')
 const search = require('./remote-search')
+const permission = require('./permission')
 
 const mocks = [
   ...user,
   ...role,
-  ...search
+  ...search,
+  ...permission
 ]
 
 // for front mock

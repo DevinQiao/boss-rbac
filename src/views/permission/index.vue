@@ -5,6 +5,7 @@
         type="success"
         style="float: right"
         icon="el-icon-circle-plus-outline"
+        @click="popAddDialog"
       >新增权限
       </el-button>
       <el-form :inline="true" :model="searchForm" class="search-form-inline">
@@ -46,9 +47,11 @@
         </template> -->
       <!-- </el-table-column> -->
       <el-table-column label="操作">
-        <el-button type="warning">修改</el-button>
-        <el-button type="danger">删除</el-button>
-        <el-button type="primary">分配角色</el-button>
+        <template slot-scope="scope">
+          <el-button type="warning" @click="popUpdateDialog(scope.row)">修改</el-button>
+          <el-button type="danger" @click="deletePermission(scope.row.path)">删除</el-button>
+          <el-button type="primary" @click="popAssignRole(scope.row)">分配角色</el-button>
+        </template>
       </el-table-column>
     </el-table>
 
@@ -62,13 +65,20 @@
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
     />
+
+    <InfoDialog v-if="showInfoDialog" ref="infoDialog" :isadd="isAdd" :permission="tempPermision" @add="addPermission" @update="updatePermission" />
+    <AssignRole v-if="showAssignRole" ref="assignRole" :permission="tempPermision" @assign-roles="assignRoles" />
   </div>
 </template>
 
 <script>
 import path from 'path'
 import { getRoutes } from '@/api/role'
+import { addPermission, updatePermission, deletePermission, assignRoles } from '@/api/permission'
+import InfoDialog from './components/info-dialog.vue'
+import AssignRole from './components/assign-role.vue'
 export default {
+  components: { InfoDialog, AssignRole },
   data() {
     return {
       routeList: [],
@@ -83,7 +93,16 @@ export default {
       },
       searchOptions: {
         title: ''
-      }
+      },
+
+      isAdd: true,
+      showInfoDialog: false,
+      tempPermision: {
+        path: '',
+        title: ''
+      },
+
+      showAssignRole: false
     }
   },
   computed: {
@@ -165,6 +184,100 @@ export default {
       }
 
       return false
+    },
+
+    popAddDialog() {
+      this.showInfoDialog = true
+      this.isAdd = true
+      this.tempPermision = {}
+      this.$nextTick(() => {
+        this.$refs.infoDialog.showDialog()
+      })
+    },
+
+    async addPermission(tempData) {
+      const response = await addPermission()
+      const { result } = response.data
+      if (result) {
+        const newPermission = {}
+        newPermission.path = tempData.path
+        newPermission.title = tempData.title
+        this.routeList.push(newPermission)
+        this.showInfoDialog = false
+        this.$message({
+          message: '新增权限成功',
+          type: 'success'
+        })
+      }
+    },
+
+    popUpdateDialog(tempData) {
+      this.showInfoDialog = true
+      this.isAdd = false
+      this.tempPermision.path = tempData.path
+      this.tempPermision.title = tempData.title
+      this.$nextTick(() => {
+        this.$refs.infoDialog.showDialog()
+      })
+    },
+
+    async updatePermission(tempData) {
+      const response = await updatePermission()
+      const { result } = response.data
+      if (result) {
+        for (var index in this.routeList) {
+          if (this.routeList[index].path === this.tempPermision.path) {
+            this.routeList[index].path = tempData.path
+            this.routeList[index].title = tempData.title
+          }
+        }
+        this.showInfoDialog = false
+        this.$message({
+          message: '修改权限成功',
+          type: 'success'
+        })
+      }
+    },
+
+    async deletePermission(path) {
+      await this.$confirm('确认删除这个权限吗', '确认操作', {
+        type: 'danger'
+      })
+      const response = await deletePermission()
+      const { result } = response.data
+      if (result) {
+        for (var index in this.routeList) {
+          if (this.routeList[index].path === path) {
+            this.routeList.splice(index, 1)
+          }
+        }
+
+        this.$message({
+          message: '删除权限成功',
+          type: 'success'
+        })
+      }
+    },
+
+    popAssignRole(tempData) {
+      this.showAssignRole = true
+      this.tempPermision.path = tempData.path
+      this.tempPermision.title = tempData.title
+      this.$nextTick(() => {
+        this.$refs.assignRole.showDialog()
+      })
+    },
+
+    async assignRoles() {
+      const response = await assignRoles()
+      const { result } = response.data
+      if (result) {
+        this.showAssignRole = false
+        this.$message({
+          message: '分配角色成功',
+          type: 'success'
+        })
+      }
     }
   }
 }

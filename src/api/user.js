@@ -61,3 +61,11 @@ export function updateUserRole(data) {
     data
   })
 }
+
+export function updateUserPwd(data) {
+  return request({
+    url: '/user/updatePwd',
+    method: 'post',
+    data
+  })
+}

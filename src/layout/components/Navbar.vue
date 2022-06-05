@@ -30,7 +30,7 @@
           <router-link to="/personal-center">
             <el-dropdown-item>个人中心</el-dropdown-item>
           </router-link>
-          <router-link to="/personal-center">
+          <router-link to="/personal-center/resetPwd">
             <el-dropdown-item>重置密码</el-dropdown-item>
           </router-link>
           <el-dropdown-item divided @click.native="logout">

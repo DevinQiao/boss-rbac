@@ -196,5 +196,20 @@ module.exports = [
         }
       }
     }
+  },
+
+  // 返回修改用户密码的结果
+  {
+    url: '/user/updatePwd',
+    type: 'post',
+    response: config => {
+      // 后端修改用户的操作，假设修改是成功的
+      return {
+        code: 20000,
+        data: {
+          result: true
+        }
+      }
+    }
   }
 ]

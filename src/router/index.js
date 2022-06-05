@@ -65,6 +65,12 @@ export const constantRoutes = [
         component: () => import('@/views/personal-center/index'),
         name: 'Show',
         meta: { title: '个人信息', icon: 'user' }
+      },
+      {
+        path: 'resetPwd',
+        component: () => import('@/views/personal-center/reset-password'),
+        name: 'ResetPassword',
+        meta: { title: '重置密码', icon: 'password' }
       }
     ]
   }

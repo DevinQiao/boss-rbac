@@ -34,7 +34,6 @@
 </template>
 
 <script>
-import { updateUserPwd } from '@/api/user'
 
 export default {
   data() {

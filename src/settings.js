@@ -1,35 +1,14 @@
 module.exports = {
-  title: 'Boss权限管理系统',
+  title: 'BOSS权限管理系统',
 
-  /**
-   * @type {boolean} true | false
-   * @description Whether show the settings right-panel
-   */
-  showSettings: true,
+  authorizationValue: 'Basic Ym9zczoxNjI1MA==',
 
-  /**
-   * @type {boolean} true | false
-   * @description Whether need tagsView
-   */
-  tagsView: true,
+  pages: {
 
-  /**
-   * @type {boolean} true | false
-   * @description Whether fix the header
-   */
-  fixedHeader: false,
+    springBootAdminUrl: 'http://localhost:9470/login',
 
-  /**
-   * @type {boolean} true | false
-   * @description Whether show the logo in sidebar
-   */
-  sidebarLogo: false,
+    kibanaUrl: 'http://localhost:5601',
 
-  /**
-   * @type {string | array} 'production' | ['production', 'development']
-   * @description Need show err logs component.
-   * The default is only used in the production env
-   * If you want to also use it in dev, you can pass ['production', 'development']
-   */
-  errorLog: 'production'
+    nacosUrl: 'http://localhost:9001/nacos'
+  }
 }

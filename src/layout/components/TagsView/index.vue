@@ -1,6 +1,6 @@
 <template>
   <div id="tags-view-container" class="tags-view-container">
-    <scroll-pane ref="scrollPane" class="tags-view-wrapper" @scroll="handleScroll">
+    <scroll-pane ref="scrollPane" class="tags-view-wrapper">
       <router-link
         v-for="tag in visitedViews"
         ref="tag"
@@ -9,24 +9,35 @@
         :to="{ path: tag.path, query: tag.query, fullPath: tag.fullPath }"
         tag="span"
         class="tags-view-item"
-        @click.middle.native="!isAffix(tag)?closeSelectedTag(tag):''"
+        @click.middle.native="closeSelectedTag(tag)"
         @contextmenu.prevent.native="openMenu(tag,$event)"
       >
-        {{ tag.title }}
-        <span v-if="!isAffix(tag)" class="el-icon-close" @click.prevent.stop="closeSelectedTag(tag)" />
+        {{ generateTitle(tag.title) }}
+        <span v-if="!tag.meta.affix" class="el-icon-close" @click.prevent.stop="closeSelectedTag(tag)" />
+        <span v-else class="el-icon-none" />
       </router-link>
     </scroll-pane>
     <ul v-show="visible" :style="{left:left+'px',top:top+'px'}" class="contextmenu">
-      <li @click="refreshSelectedTag(selectedTag)">刷新页面</li>
-      <li v-if="!isAffix(selectedTag)" @click="closeSelectedTag(selectedTag)">关闭当前页面</li>
-      <li @click="closeOthersTags">关闭其他页面</li>
-      <li @click="closeAllTags(selectedTag)">关闭所有页面</li>
+      <li @click="refreshSelectedTag(selectedTag)">
+        {{ $t('tagsView.refresh') }}
+      </li>
+      <li v-if="!(selectedTag.meta&&selectedTag.meta.affix)" @click="closeSelectedTag(selectedTag)">
+        {{
+          $t('tagsView.close') }}
+      </li>
+      <li @click="closeOthersTags">
+        {{ $t('tagsView.closeOthers') }}
+      </li>
+      <li @click="closeAllTags(selectedTag)">
+        {{ $t('tagsView.closeAll') }}
+      </li>
     </ul>
   </div>
 </template>
 
 <script>
 import ScrollPane from './ScrollPane'
+import { generateTitle } from '@/utils/i18n'
 import path from 'path'
 
 export default {
@@ -45,7 +56,7 @@ export default {
       return this.$store.state.tagsView.visitedViews
     },
     routes() {
-      return this.$store.state.permission.routes
+      return this.$store.state.account.routes
     }
   },
   watch: {
@@ -66,11 +77,9 @@ export default {
     this.addTags()
   },
   methods: {
+    generateTitle, // generateTitle by vue-i18n
     isActive(route) {
       return route.path === this.$route.path
-    },
-    isAffix(tag) {
-      return tag.meta && tag.meta.affix
     },
     filterAffixTags(routes, basePath = '/') {
       let tags = []
@@ -158,7 +167,7 @@ export default {
     toLastView(visitedViews, view) {
       const latestView = visitedViews.slice(-1)[0]
       if (latestView) {
-        this.$router.push(latestView.fullPath)
+        this.$router.push(latestView)
       } else {
         // now the default is to redirect to the home page if there is no tags-view,
         // you can adjust it according to your needs.
@@ -189,9 +198,6 @@ export default {
     },
     closeMenu() {
       this.visible = false
-    },
-    handleScroll() {
-      this.closeMenu()
     }
   }
 }
@@ -199,44 +205,54 @@ export default {
 
 <style lang="scss" scoped>
 .tags-view-container {
-  height: 34px;
+  height: 35px;
   width: 100%;
   background: #fff;
-  border-bottom: 1px solid #d8dce5;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
+  border-bottom: 1px solid #f1f1f1;
   .tags-view-wrapper {
     .tags-view-item {
       display: inline-block;
       position: relative;
       cursor: pointer;
-      height: 26px;
-      line-height: 26px;
-      border: 1px solid #d8dce5;
-      color: #495060;
+      height: 34px;
+      line-height: 34px;
+      border-left: 1px solid #f1f1f1;
+      color: #999;
       background: #fff;
-      padding: 0 8px;
-      font-size: 12px;
-      margin-left: 5px;
-      margin-top: 4px;
+      padding: 0 5px 0 20px;
+      font-size: 13px;
+      transition: all .3s;
+      .el-icon-none {
+        width: 16px
+      }
+      &:hover {
+        color: #495060;
+        & .el-icon-close {
+          font-size: 1rem;
+          font-weight: bold;
+          color: red;
+        }
+      }
       &:first-of-type {
-        margin-left: 15px;
       }
       &:last-of-type {
-        margin-right: 15px;
+        border-right: 1px solid #f1f1f1;
       }
       &.active {
-        background-color: #42b983;
-        color: #fff;
-        border-color: #42b983;
+        /*background-color: #42b983;*/
+        /*color: #fff;*/
+        /*border-color: #42b983;*/
         &::before {
           content: '';
-          background: #fff;
+          background: #85ef47!important;
+          box-shadow: 0 0 7px #b7eb8f;
           display: inline-block;
-          width: 8px;
-          height: 8px;
+          bottom: 3px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           position: relative;
-          margin-right: 2px;
+          margin-right: 4px;
         }
       }
     }
@@ -249,16 +265,17 @@ export default {
     list-style-type: none;
     padding: 5px 0;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 400;
     color: #333;
-    box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, .3);
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
     li {
       margin: 0;
-      padding: 7px 16px;
+      padding: 7px 20px;
       cursor: pointer;
       &:hover {
-        background: #eee;
+        background-color: #e8f4ff;
+        color: #46a6ff;
       }
     }
   }
@@ -270,12 +287,14 @@ export default {
 .tags-view-wrapper {
   .tags-view-item {
     .el-icon-close {
+      color: #fff;
       width: 16px;
       height: 16px;
       vertical-align: 2px;
+      font-size: 12px;
+      font-weight: 600;
       border-radius: 50%;
       text-align: center;
-      transition: all .3s cubic-bezier(.645, .045, .355, 1);
       transform-origin: 100% 50%;
       &:before {
         transform: scale(.6);
@@ -283,8 +302,8 @@ export default {
         vertical-align: -3px;
       }
       &:hover {
-        background-color: #b4bccc;
-        color: #fff;
+        /*background-color: #b4bccc;*/
+        /*color: #fff;*/
       }
     }
   }

@@ -1,7 +1,7 @@
 <template>
   <section class="app-main">
     <transition name="fade-transform" mode="out-in">
-      <keep-alive :include="cachedViews">
+      <keep-alive>
         <router-view :key="key" />
       </keep-alive>
     </transition>
@@ -12,9 +12,6 @@
 export default {
   name: 'AppMain',
   computed: {
-    cachedViews() {
-      return this.$store.state.tagsView.cachedViews
-    },
     key() {
       return this.$route.path
     }
@@ -29,10 +26,14 @@ export default {
   width: 100%;
   position: relative;
   overflow: hidden;
+  background: #f3f5f8;
+  font-size: .88rem;
 }
 
 .fixed-header+.app-main {
   padding-top: 50px;
+  height: 100vh;
+  overflow: auto;
 }
 
 .hasTagsView {
@@ -43,15 +44,16 @@ export default {
 
   .fixed-header+.app-main {
     padding-top: 84px;
+    overflow-x: hidden;
   }
 }
 </style>
 
 <style lang="scss">
 // fix css style bug in open el-dialog
-.el-popup-parent--hidden {
-  .fixed-header {
-    padding-right: 15px;
-  }
-}
+//.el-popup-parent--hidden {
+//  .fixed-header {
+//    padding-right: 15px;
+//  }
+//}
 </style>

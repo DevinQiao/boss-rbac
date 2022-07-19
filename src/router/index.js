@@ -1,14 +1,15 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import Layout from '@/layout'
+import db from '@/utils/localstorage'
+import request from '@/utils/request'
+import store from '@/store/index'
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
 
 Vue.use(Router)
 
-import Layout from '@/layout'
-
-/**
- * 公共路由
- */
-export const constantRoutes = [
+const constRoutes = [
   {
     path: '/redirect',
     component: Layout,
@@ -23,11 +24,6 @@ export const constantRoutes = [
   {
     path: '/login',
     component: () => import('@/views/login/index'),
-    hidden: true
-  },
-  {
-    path: '/auth-redirect',
-    component: () => import('@/views/login/auth-redirect'),
     hidden: true
   },
   {
@@ -76,79 +72,93 @@ export const constantRoutes = [
   }
 ]
 
-/**
- * 异步路由（权限路由）
- */
-export const asyncRoutes = [
-  {
-    path: '/user',
-    component: Layout,
-    redirect: '/user/list',
-    name: 'User',
-    meta: { title: '用户管理', icon: 'user', roles: ['admin'] },
-    children: [
-      {
-        path: 'list',
-        component: () => import('@/views/user/index'),
-        name: 'UserList',
-        meta: { title: '用户信息管理', icon: 'peoples' }
-      },
-      {
-        path: 'user-role',
-        component: () => import('@/views/user/user-role'),
-        name: 'UserRoleList',
-        meta: { title: '用户角色分配', icon: 'peoples' }
-      }
-    ]
-  },
-
-  {
-    path: '/role',
-    component: Layout,
-    redirect: '/role/list',
-    name: 'Role',
-    meta: { title: '角色管理', icon: 'user', roles: ['admin'] },
-    children: [
-      {
-        path: 'list',
-        component: () => import('@/views/role/index'),
-        name: 'RoleList',
-        meta: { title: '角色管理', icon: 'user' }
-      }
-    ]
-  },
-
-  {
-    path: '/permission',
-    component: Layout,
-    redirect: '/permission/list',
-    name: 'Permission',
-    meta: { title: '权限管理', icon: 'user', roles: ['admin'] },
-    children: [
-      {
-        path: 'list',
-        component: () => import('@/views/permission/index'),
-        name: 'PermissionList',
-        meta: { title: '权限管理', icon: 'user' }
-      }
-    ]
-  },
-
-  // 404 必须放在最后面
-  { path: '*', redirect: '/404', hidden: true }
-]
-
-const createRouter = () => new Router({
-  // mode: 'history', // require service support
+const router = new Router({
   scrollBehavior: () => ({ y: 0 }),
-  routes: constantRoutes
+  routes: constRoutes
 })
 
-const router = createRouter()
+const whiteList = ['/login']
 
-export function resetRouter() {
-  const newRouter = createRouter()
-  router.matcher = newRouter.matcher // reset router
+let asyncRouter
+
+// 导航守卫，渲染动态路由
+router.beforeEach((to, from, next) => {
+  NProgress.start()
+  if (whiteList.indexOf(to.path) !== -1) {
+    next()
+  } else {
+    const token = db.get('ACCESS_TOKEN')
+    const user = db.get('USER')
+    const userRouter = get('USER_ROUTER')
+    if (token.length && user) {
+      if (!asyncRouter) {
+        if (!userRouter) {
+          request.get(`system/user/getMenuList`).then((res) => {
+            const permissions = user.authorities
+            store.commit('account/setPermissions', permissions)
+            asyncRouter = res.data.data
+            store.commit('account/setRoutes', asyncRouter)
+            save('USER_ROUTER', asyncRouter)
+            go(to, next)
+          })
+        } else {
+          asyncRouter = userRouter
+          go(to, next)
+        }
+      } else {
+        next()
+      }
+    } else {
+      if (to.path === '/login') {
+        next()
+      } else {
+        next('/login')
+        NProgress.done()
+      }
+    }
+  }
+})
+
+router.afterEach((to, from) => {
+  if (to.path === '/login') {
+    asyncRouter = null
+  }
+  NProgress.done()
+})
+
+function go(to, next) {
+  asyncRouter = filterAsyncRouter(asyncRouter)
+  router.addRoutes(asyncRouter)
+  next({ ...to, replace: true })
+}
+
+function save(name, data) {
+  localStorage.setItem(name, JSON.stringify(data))
+}
+
+function get(name) {
+  return JSON.parse(localStorage.getItem(name))
+}
+
+function filterAsyncRouter(routes) {
+  return routes.filter((route) => {
+    const component = route.component
+    if (component) {
+      if (route.component === 'Layout') {
+        route.component = Layout
+      } else {
+        route.component = view(component)
+      }
+      if (route.children && route.children.length) {
+        route.children = filterAsyncRouter(route.children)
+      }
+      return true
+    }
+  })
+}
+
+function view(path) {
+  return (resolve) => require([`@/views${path}.vue`], resolve)
 }
 
 export default router

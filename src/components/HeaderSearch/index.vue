@@ -1,6 +1,6 @@
 <template>
   <div :class="{'show':show}" class="header-search">
-    <svg-icon class-name="search-icon" icon-class="search" @click.stop="click" />
+    <svg-icon class-name="search-icon" icon-class="magnifying-glass" style="margin-top: 3px" @click.stop="click" />
     <el-select
       ref="headerSearchSelect"
       v-model="search"
@@ -8,7 +8,7 @@
       filterable
       default-first-option
       remote
-      placeholder="Search"
+      :placeholder="$t('table.search')"
       class="header-search-select"
       @change="change"
     >
@@ -22,6 +22,7 @@
 // make search results more in line with expectations
 import Fuse from 'fuse.js'
 import path from 'path'
+import i18n from '@/lang'
 
 export default {
   name: 'HeaderSearch',
@@ -36,10 +37,16 @@ export default {
   },
   computed: {
     routes() {
-      return this.$store.getters.permission_routes
+      return this.$store.state.account.routes
+    },
+    lang() {
+      return this.$store.state.setting.language
     }
   },
   watch: {
+    lang() {
+      this.searchPool = this.generateRoutes(this.routes)
+    },
     routes() {
       this.searchPool = this.generateRoutes(this.routes)
     },
@@ -109,7 +116,10 @@ export default {
         }
 
         if (router.meta && router.meta.title) {
-          data.title = [...data.title, router.meta.title]
+          // generate internationalized title
+          const i18ntitle = i18n.t(`${router.meta.title}`)
+
+          data.title = [...data.title, i18ntitle]
 
           if (router.redirect !== 'noRedirect') {
             // only push the routes with title

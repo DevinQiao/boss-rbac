@@ -11,7 +11,7 @@
           <el-col :span="6">
             <div style="margin: 50px; text-align: center;">
               <el-row>
-                <el-avatar :size="88" :src="require('@/assets/avatars/'+userInfo.avatar+'.png')" />
+                <el-avatar :size="88" :src="require('@/assets/avatar/'+userInfo.avatar+'.png')" />
               </el-row>
               <el-row style="margin: 0 auto">
                 <el-tooltip class="item" effect="dark" content="点击更改头像" placement="bottom">
@@ -76,7 +76,6 @@
 
 <script>
 import { getToken } from '@/utils/auth'
-import { getInfo } from '@/api/user'
 import ChangeAvatar from './components/change-avatar.vue'
 import UpdateUser from './components/update-user.vue'
 

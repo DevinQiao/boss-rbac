@@ -10,7 +10,7 @@
         <el-tab-pane label="系统头像">
           <div class="grid">
             <el-radio v-for="avatar of localAvatars" :key="avatar" v-model="choosedAvatar" :label="avatar">
-              <el-avatar :src="require('@/assets/avatars/'+avatar+'.png')" />
+              <el-avatar :src="require('@/assets/avatar/'+avatar+'.png')" />
             </el-radio>
           </div>
         </el-tab-pane>

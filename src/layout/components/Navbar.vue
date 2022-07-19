@@ -1,40 +1,44 @@
 <template>
   <div class="navbar">
-    <hamburger id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
-
+    <hamburger
+      id="hamburger-container"
+      :is-active="sidebar.opened"
+      class="hamburger-container"
+      @toggleClick="toggleSideBar"
+    />
     <breadcrumb id="breadcrumb-container" class="breadcrumb-container" />
 
     <div class="right-menu">
       <template v-if="device!=='mobile'">
         <search id="header-search" class="right-menu-item" />
-
-        <error-log class="errLog-container right-menu-item hover-effect" />
-
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
-
-        <el-tooltip content="全局大小" effect="dark" placement="bottom">
-          <size-select id="size-select" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
+        <lang-select class="right-menu-item hover-effect" style="display: none" />
       </template>
 
       <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
         <div class="avatar-wrapper">
-          <img :src="require('@/assets/avatars/'+avatar+'.png')" class="user-avatar">
-          <i class="el-icon-caret-bottom" />
+          <img :src="avatar" class="user-avatar" alt="avatar">
+          <span class="user-name">{{ username }}</span>
         </div>
         <el-dropdown-menu slot="dropdown">
-          <router-link to="/">
-            <el-dropdown-item>系统首页</el-dropdown-item>
+          <router-link to="/profile/index">
+            <el-dropdown-item>
+              {{ $t('navbar.profile') }}
+            </el-dropdown-item>
           </router-link>
-          <router-link to="/personal-center">
-            <el-dropdown-item>个人中心</el-dropdown-item>
-          </router-link>
-          <router-link to="/personal-center/resetPwd">
-            <el-dropdown-item>重置密码</el-dropdown-item>
-          </router-link>
-          <el-dropdown-item divided @click.native="logout">
-            <span style="display:block;">退出登录</span>
+          <el-dropdown-item>
+            <span style="display:block;" @click="setting">{{ $t('navbar.setting') }}</span>
+          </el-dropdown-item>
+          <a target="_blank" href="https://gitee.com/qiao-jinbin/boss-rbac-cloud">
+            <el-dropdown-item>
+              {{ $t('navbar.github') }}
+            </el-dropdown-item>
+          </a>
+          <el-dropdown-item divided>
+            <span style="display:block;" @click="deleteCache">{{ $t('navbar.deleteCache') }}</span>
+          </el-dropdown-item>
+          <el-dropdown-item divided>
+            <span style="display:block;" @click="logout">{{ $t('navbar.logOut') }}</span>
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
@@ -43,37 +47,71 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
-import ErrorLog from '@/components/ErrorLog'
+import LangSelect from '@/components/LangSelect'
+import db from '@/utils/localstorage'
 import Screenfull from '@/components/Screenfull'
-import SizeSelect from '@/components/SizeSelect'
 import Search from '@/components/HeaderSearch'
 
 export default {
   components: {
     Breadcrumb,
     Hamburger,
-    ErrorLog,
+    LangSelect,
     Screenfull,
-    SizeSelect,
     Search
   },
   computed: {
-    ...mapGetters([
-      'sidebar',
-      'avatar',
-      'device'
-    ])
+    sidebar() {
+      return this.$store.state.setting.sidebar
+    },
+    avatar() {
+      return require(`@/assets/avatar/${this.$store.state.account.user.avatar}.png`)
+    },
+    username() {
+      return this.$store.state.account.user.username
+    },
+    device() {
+      return this.$store.state.setting.device
+    }
   },
   methods: {
     toggleSideBar() {
-      this.$store.dispatch('app/toggleSideBar')
+      this.$store.commit('setting/toggleSidebar')
     },
-    async logout() {
-      await this.$store.dispatch('user/logout')
-      this.$router.push(`/login?redirect=${this.$route.fullPath}`)
+    setting() {
+      this.$store.commit('setting/openSettingBar', true)
+    },
+    logout() {
+      this.$delete('auth/signout').then(() => {
+        this.clean()
+      }).catch(() => {
+        this.clean()
+      })
+    },
+    clean() {
+      db.clear()
+      this.$store.dispatch('tagsView/delAllVisitedViews')
+      this.$store.dispatch('tagsView/delAllCachedViews')
+      this.$router.push('login')
+      this.$message({
+        message: '安全退出',
+        type: 'success'
+      })
+    },
+    deleteCache() {
+      this.$confirm(this.$t('tips.confirmDeleteCache'), this.$t('common.tips'), {
+        confirmButtonText: this.$t('common.confirm'),
+        cancelButtonText: this.$t('common.cancel'),
+        type: 'warning'
+      }).then(() => {
+        db.remove('USER_ROUTER')
+        db.remove('PERMISSIONS')
+        location.reload()
+      }).catch(() => {
+        // do nothing
+      })
     }
   }
 }
@@ -85,7 +123,7 @@ export default {
   overflow: hidden;
   position: relative;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  border-bottom: 1px solid #f1f1f1;
 
   .hamburger-container {
     line-height: 46px;
@@ -93,7 +131,7 @@ export default {
     float: left;
     cursor: pointer;
     transition: background .3s;
-    -webkit-tap-highlight-color:transparent;
+    -webkit-tap-highlight-color: transparent;
 
     &:hover {
       background: rgba(0, 0, 0, .025)
@@ -137,17 +175,26 @@ export default {
     }
 
     .avatar-container {
-      margin-right: 30px;
+      margin-right: 10px;
 
       .avatar-wrapper {
         margin-top: 5px;
         position: relative;
 
+        .user-name {
+          vertical-align: top;
+          font-size: .9rem;
+          margin-left: 5px;
+          margin-top: -4px;
+          display: inline-block;
+        }
+
         .user-avatar {
           cursor: pointer;
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          vertical-align: text-bottom;
         }
 
         .el-icon-caret-bottom {

@@ -7,7 +7,7 @@
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" class="sidebar-logo">
-        <h1 class="sidebar-title">{{ title }} </h1>
+        <h1 class="sidebar-title">{{ $t('system.title') }} <span>cloud</span></h1>
       </router-link>
     </transition>
   </div>
@@ -22,10 +22,9 @@ export default {
       required: true
     }
   },
-  data() {
-    return {
-      title: 'Vue Element Admin',
-      logo: 'https://wpimg.wallstcn.com/69a1c46c-eb1c-4b46-8bd4-e9e686ef5251.png'
+  computed: {
+    logo() {
+      return require('@/assets/logo.svg')
     }
   }
 }
@@ -44,9 +43,9 @@ export default {
 .sidebar-logo-container {
   position: relative;
   width: 100%;
-  height: 50px;
-  line-height: 50px;
-  background: #2b2f3a;
+  height: 54px;
+  line-height: 54px;
+  background: #272c33;
   text-align: center;
   overflow: hidden;
 
@@ -55,27 +54,30 @@ export default {
     width: 100%;
 
     & .sidebar-logo {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      margin-right: 10px;
+      display: inline-block;
       vertical-align: middle;
-      margin-right: 12px;
     }
 
     & .sidebar-title {
       display: inline-block;
       margin: 0;
       color: #fff;
-      font-weight: 600;
+      font-weight: 500;
       line-height: 50px;
-      font-size: 14px;
-      font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
+      font-size: 19px;
       vertical-align: middle;
+      & span {
+        font-size: 12px;
+        letter-spacing: 1px;
+      }
     }
   }
 
   &.collapse {
     .sidebar-logo {
-      margin-right: 0px;
+      margin-right: 0;
     }
   }
 }

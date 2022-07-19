@@ -1,268 +1,199 @@
 <template>
-  <div class="login-container">
-    <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" autocomplete="on" label-position="left">
-
-      <div class="title-container">
-        <h3 class="title">BOSS权限管理系统</h3>
+  <div id="loginLayout">
+    <div class="login_page">
+      <div class="login_page_right" />
+      <div class="login_page_form">
+        <div class="login_page_form_title">
+          <img class="login_page_form_title_logo" src="../../assets/logo.svg" alt="">
+          <p class="login_page_form_title_p"> {{ $t('login.title') }}</p>
+          <lang-select class="set-language" />
+        </div>
+        <el-form ref="loginForm" :model="loginForm" :rules="rules" class="login-form" autocomplete="off" label-position="left">
+          <el-form-item prop="username">
+            <el-input
+              ref="username"
+              v-model="loginForm.username"
+              :placeholder="$t('login.username')"
+              prefix-icon="el-icon-user"
+              name="username"
+              type="text"
+              autocomplete="off"
+            />
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+              ref="password"
+              v-model="loginForm.password"
+              prefix-icon="el-icon-key"
+              type="password"
+              :placeholder="$t('login.password')"
+              name="password"
+              autocomplete="off"
+              :show-password="true"
+            />
+          </el-form-item>
+          <el-form-item prop="code" class="code-input">
+            <el-input
+              ref="code"
+              v-model="loginForm.code"
+              prefix-icon="el-icon-lock"
+              :placeholder="$t('login.code')"
+              name="code"
+              type="text"
+              autocomplete="off"
+              style="width: 60%"
+              class="left"
+              @keyup.enter.native="handleLogin"
+            />
+            <img
+              v-if="imageCode"
+              :src="imageCode"
+              width="38%"
+              height="100%"
+              alt="请输入验证码"
+              class="right"
+              @click="getCodeImage()"
+            >
+          </el-form-item>
+          <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:14px;" @click.native.prevent="handleLogin">
+            {{ $t('login.logIn') }}
+          </el-button>
+        </el-form>
       </div>
-
-      <el-form-item prop="username">
-        <span class="svg-container">
-          <svg-icon icon-class="user" />
-        </span>
-        <el-input
-          ref="username"
-          v-model="loginForm.username"
-          placeholder="请输入用户名"
-          name="username"
-          type="text"
-          tabindex="1"
-          autocomplete="on"
-        />
-      </el-form-item>
-
-      <el-tooltip v-model="capsTooltip" content="大写已打开" placement="right" manual>
-        <el-form-item prop="password">
-          <span class="svg-container">
-            <svg-icon icon-class="password" />
-          </span>
-          <el-input
-            :key="passwordType"
-            ref="password"
-            v-model="loginForm.password"
-            :type="passwordType"
-            placeholder="请输入密码"
-            name="password"
-            tabindex="2"
-            autocomplete="on"
-            @keyup.native="checkCapslock"
-            @blur="capsTooltip = false"
-            @keyup.enter.native="handleLogin"
-          />
-          <span class="show-pwd" @click="showPwd">
-            <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
-          </span>
-        </el-form-item>
-      </el-tooltip>
-
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">登录</el-button>
-    </el-form>
+      <div class="login_page_foot">
+        <div class="copyright">&copy; {{ curYear }} <a target="_blank" href="https://gitee.com/qiao-jinbin/boss-rbac-cloud">DevinJoe</a> - BOSS</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+import LangSelect from '@/components/LangSelect'
+import db from '@/utils/localstorage'
+import { randomNum } from '@/utils'
+import axios from 'axios'
 
 export default {
   name: 'Login',
+  components: { LangSelect },
   data() {
     return {
+      curYear: 0,
+      codeUrl: `${process.env.VUE_APP_BASE_API}auth/captcha`,
       loginForm: {
         username: '',
-        password: ''
+        password: '',
+        code: ''
       },
-      loginRules: {
-        username: [
-          { required: true, trigger: 'blur', message: '用户名不能为空！' },
-          { pattern: /^[A-Za-z0-9]+$/, trigger: 'blur', message: '用户名只能包含英文字母和数字！' },
-          { min: 3, max: 18, trigger: 'blur', message: '用户名长度在 3 到 18 个字符之间！' }
-        ],
-        password: [
-          { required: true, trigger: 'blur', message: '密码不能为空！' },
-          { pattern: /^\w+$/, trigger: 'blur', message: '密码只能包含英文字母、数字和下划线！' },
-          { min: 6, max: 15, trigger: 'blur', message: '密码长度在 6 到 15 个字符之间！' }
-        ]
+      rules: {
+        username: { required: true, message: this.$t('rules.require'), trigger: 'blur' },
+        password: { required: true, message: this.$t('rules.require'), trigger: 'blur' },
+        code: { required: true, message: this.$t('rules.require'), trigger: 'blur' }
       },
-      passwordType: 'password',
-      capsTooltip: false,
       loading: false,
-      showDialog: false,
-      redirect: undefined,
-      otherQuery: {}
+      randomId: randomNum(24, 16),
+      imageCode: ''
     }
   },
-  watch: {
-    $route: {
-      handler: function(route) {
-        const query = route.query
-        if (query) {
-          this.redirect = query.redirect
-          this.otherQuery = this.getOtherQuery(query)
-        }
-      },
-      immediate: true
-    }
+  created() {
+    this.curYear = new Date().getFullYear()
   },
   mounted() {
-    if (this.loginForm.username === '') {
-      this.$refs.username.focus()
-    } else if (this.loginForm.password === '') {
-      this.$refs.password.focus()
-    }
+    db.clear()
+    this.getCodeImage()
   },
   methods: {
-    checkCapslock(e) {
-      const { key } = e
-      this.capsTooltip = key && key.length === 1 && (key >= 'A' && key <= 'Z')
-    },
-    showPwd() {
-      if (this.passwordType === 'password') {
-        this.passwordType = ''
-      } else {
-        this.passwordType = 'password'
-      }
-      this.$nextTick(() => {
-        this.$refs.password.focus()
+    getCodeImage() {
+      axios({
+        method: 'GET',
+        url: `${this.codeUrl}?key=${this.randomId}`,
+        responseType: 'arraybuffer'
+      }).then(res => {
+        return 'data:image/png;base64,' + btoa(
+          new Uint8Array(res.data)
+            .reduce((data, byte) => data + String.fromCharCode(byte), '')
+        )
+      }).then((res) => {
+        this.imageCode = res
+      }).catch((e) => {
+        if (e.toString().indexOf('429') !== -1) {
+          this.$message({
+            message: this.$t('tips.tooManyRequest'),
+            type: 'error'
+          })
+        } else {
+          this.$message({
+            message: this.$t('tips.getCodeImageFailed'),
+            type: 'error'
+          })
+        }
       })
     },
     handleLogin() {
-      this.$refs.loginForm.validate(valid => {
-        if (valid) {
-          this.loading = true
-          this.$store.dispatch('user/login', this.loginForm)
-            .then(() => {
-              this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
-              this.loading = false
-            })
-            .catch(() => {
-              this.loading = false
-            })
-        } else {
-          console.log('提交错误!')
-          return false
-        }
-      })
+      let username_c = false
+      let password_c = false
+      let code_c = false
+      this.$refs.loginForm.validateField('username', e => { if (!e) { username_c = true } })
+      this.$refs.loginForm.validateField('password', e => { if (!e) { password_c = true } })
+      this.$refs.loginForm.validateField('code', e => { if (!e) { code_c = true } })
+      if (username_c && password_c && code_c) {
+        this.loading = true
+        const that = this
+        this.$login('auth/oauth/token', {
+          ...that.loginForm,
+          key: this.randomId
+        }).then((r) => {
+          const data = r.data
+          this.saveLoginData(data)
+          this.getUserDetailInfo()
+        }).catch((error) => {
+          console.error(error)
+          that.loading = false
+          that.getCodeImage()
+        })
+      }
     },
-    getOtherQuery(query) {
-      return Object.keys(query).reduce((acc, cur) => {
-        if (cur !== 'redirect') {
-          acc[cur] = query[cur]
-        }
-        return acc
-      }, {})
+    saveLoginData(data) {
+      this.$store.commit('account/setAccessToken', data.access_token)
+      this.$store.commit('account/setRefreshToken', data.refresh_token)
+      const current = new Date()
+      const expireTime = current.setTime(current.getTime() + 1000 * data.expires_in)
+      this.$store.commit('account/setExpireTime', expireTime)
+    },
+    getUserDetailInfo() {
+      this.$get('auth/user').then((r) => {
+        this.$store.commit('account/setUser', r.data.principal)
+        this.$message({
+          message: this.$t('tips.loginSuccess'),
+          type: 'success'
+        })
+        this.loading = false
+        this.$router.push('/')
+      }).catch((error) => {
+        this.$message({
+          message: this.$t('tips.loginFail'),
+          type: 'error'
+        })
+        console.error(error)
+        this.loading = false
+      })
     }
   }
 }
 </script>
-
 <style lang="scss">
-/* 修复input 背景不协调 和光标变色 */
-/* Detail see https://github.com/PanJiaChen/vue-element-admin/pull/927 */
-
-$bg:#283443;
-$light_gray:#fff;
-$cursor: #fff;
-
-@supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
-  .login-container .el-input input {
-    color: $cursor;
+#loginLayout {
+  .el-input--suffix .el-input__inner {
+    padding-right: 30px;
+    height: 42px !important;
+    font-size: 14px;
   }
-}
-
-/* reset element-ui css */
-.login-container {
-  .el-input {
-    display: inline-block;
-    height: 47px;
-    width: 85%;
-
-    input {
-      background: transparent;
-      border: 0px;
-      -webkit-appearance: none;
-      border-radius: 0px;
-      padding: 12px 5px 12px 15px;
-      color: $light_gray;
-      height: 47px;
-      caret-color: $cursor;
-
-      &:-webkit-autofill {
-        box-shadow: 0 0 0px 1000px $bg inset !important;
-        -webkit-text-fill-color: $cursor !important;
-      }
-    }
-  }
-
-  .el-form-item {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    color: #454545;
+  .el-input__inner {
+    height: 42px !important;
+    line-height: 42px;
   }
 }
 </style>
-
 <style lang="scss" scoped>
-$bg:#2d3a4b;
-$dark_gray:#889aa4;
-$light_gray:#eee;
-
-.login-container {
-  min-height: 100%;
-  width: 100%;
-  background-color: $bg;
-  overflow: hidden;
-
-  .login-form {
-    position: relative;
-    width: 520px;
-    max-width: 100%;
-    padding: 160px 35px 0;
-    margin: 0 auto;
-    overflow: hidden;
-  }
-
-  .tips {
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 10px;
-
-    span {
-      &:first-of-type {
-        margin-right: 16px;
-      }
-    }
-  }
-
-  .svg-container {
-    padding: 6px 5px 6px 15px;
-    color: $dark_gray;
-    vertical-align: middle;
-    width: 30px;
-    display: inline-block;
-  }
-
-  .title-container {
-    position: relative;
-
-    .title {
-      font-size: 26px;
-      color: $light_gray;
-      margin: 0px auto 40px auto;
-      text-align: center;
-      font-weight: bold;
-    }
-  }
-
-  .show-pwd {
-    position: absolute;
-    right: 10px;
-    top: 7px;
-    font-size: 16px;
-    color: $dark_gray;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .thirdparty-button {
-    position: absolute;
-    right: 0;
-    bottom: 6px;
-  }
-
-  @media only screen and (max-width: 470px) {
-    .thirdparty-button {
-      display: none;
-    }
-  }
-}
+@import "login";
 </style>

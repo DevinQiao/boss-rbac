@@ -1,13 +1,14 @@
 <template>
   <div :class="classObj" class="app-wrapper">
     <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside" />
-    <sidebar class="sidebar-container" />
+    <sidebar :class="'sidebar-container '+ sideBarTheme" />
     <div :class="{hasTagsView:needTagsView}" class="main-container">
       <div :class="{'fixed-header':fixedHeader}">
         <navbar />
         <tags-view v-if="needTagsView" />
       </div>
       <app-main />
+      <div class="footer">© {{ curYear }} <a target="_blank" href="https://gitee.com/qiao-jinbin/boss-rbac-cloud">DevinJoe</a> - BOSS</div>
       <right-panel v-if="showSettings">
         <settings />
       </right-panel>
@@ -19,7 +20,6 @@
 import RightPanel from '@/components/RightPanel'
 import { AppMain, Navbar, Settings, Sidebar, TagsView } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
-import { mapState } from 'vuex'
 
 export default {
   name: 'Layout',
@@ -32,14 +32,30 @@ export default {
     TagsView
   },
   mixins: [ResizeMixin],
+  data() {
+    return {
+      curYear: 0
+    }
+  },
   computed: {
-    ...mapState({
-      sidebar: state => state.app.sidebar,
-      device: state => state.app.device,
-      showSettings: state => state.settings.showSettings,
-      needTagsView: state => state.settings.tagsView,
-      fixedHeader: state => state.settings.fixedHeader
-    }),
+    sideBarTheme() {
+      return this.$store.state.setting.sideBarTheme
+    },
+    sidebar() {
+      return this.$store.state.setting.sidebar
+    },
+    device() {
+      return this.$store.state.setting.device
+    },
+    showSettings() {
+      return this.$store.state.setting.settingBar.opened
+    },
+    needTagsView() {
+      return this.$store.state.setting.multipage
+    },
+    fixedHeader() {
+      return this.$store.state.setting.fixHeader
+    },
     classObj() {
       return {
         hideSidebar: !this.sidebar.opened,
@@ -49,9 +65,12 @@ export default {
       }
     }
   },
+  created() {
+    this.curYear = new Date().getFullYear()
+  },
   methods: {
     handleClickOutside() {
-      this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
+      this.$store.commit('setting/closeSidebar', { withoutAnimation: false })
     }
   }
 }
@@ -97,6 +116,28 @@ export default {
   }
 
   .mobile .fixed-header {
+    width: 100%;
+  }
+  .footer {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    text-align: center;
+    height: 2.4rem;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+    font-size: 13px;
+    background: #fff;
+    width: calc(100% - #{$sideBarWidth});
+    display: block;
+    z-index: 999;
+    color: #606266;
+    line-height: 2.4rem;
+  }
+  .hideSidebar .footer  {
+    width: calc(100% - 54px)
+  }
+
+  .mobile .footer  {
     width: 100%;
   }
 </style>
